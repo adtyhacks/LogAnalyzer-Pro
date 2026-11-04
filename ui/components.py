@@ -1,6 +1,7 @@
 """Reusable UI components, custom SOC styling, badges, and Plotly templates."""
 
 import streamlit as st
+from typing import Any
 import plotly.graph_objects as go
 import plotly.express as px
 
