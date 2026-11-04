@@ -1,0 +1,42 @@
+[
+  {
+    "timestamp": "2026-10-24T12:00:00",
+    "action": "PORTAL_LOGIN",
+    "status": "FAILURE",
+    "username": "finance_exec",
+    "source_ip": "203.0.113.220",
+    "message": "Password authentication failed"
+  },
+  {
+    "timestamp": "2026-10-24T12:00:15",
+    "action": "PORTAL_LOGIN",
+    "status": "FAILURE",
+    "username": "finance_exec",
+    "source_ip": "203.0.113.220",
+    "message": "Password authentication failed"
+  },
+  {
+    "timestamp": "2026-10-24T12:00:30",
+    "action": "PORTAL_LOGIN",
+    "status": "FAILURE",
+    "username": "finance_exec",
+    "source_ip": "203.0.113.220",
+    "message": "Password authentication failed"
+  },
+  {
+    "timestamp": "2026-10-24T12:00:45",
+    "action": "PORTAL_LOGIN",
+    "status": "FAILURE",
+    "username": "finance_exec",
+    "source_ip": "203.0.113.220",
+    "message": "Password authentication failed"
+  },
+  {
+    "timestamp": "2026-10-24T12:01:10",
+    "action": "PORTAL_LOGIN",
+    "status": "SUCCESS",
+    "username": "finance_exec",
+    "source_ip": "203.0.113.220",
+    "message": "Password authentication succeeded"
+  }
+]

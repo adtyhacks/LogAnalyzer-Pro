@@ -1,0 +1,7 @@
+timestamp,action,status,username,source_ip,service,message
+2026-10-24 14:00:00,VPN_LOGIN,FAILED,vpn_user_0,198.51.100.200,openvpn,MFA Challenge Failure for vpn_user_0
+2026-10-24 14:00:15,VPN_LOGIN,FAILED,vpn_user_1,198.51.100.200,openvpn,MFA Challenge Failure for vpn_user_1
+2026-10-24 14:00:30,VPN_LOGIN,FAILED,vpn_user_2,198.51.100.200,openvpn,MFA Challenge Failure for vpn_user_2
+2026-10-24 14:00:45,VPN_LOGIN,FAILED,vpn_user_3,198.51.100.200,openvpn,MFA Challenge Failure for vpn_user_3
+2026-10-24 14:01:00,VPN_LOGIN,FAILED,vpn_user_4,198.51.100.200,openvpn,MFA Challenge Failure for vpn_user_4
+2026-10-24 14:01:15,VPN_LOGIN,FAILED,vpn_user_5,198.51.100.200,openvpn,MFA Challenge Failure for vpn_user_5

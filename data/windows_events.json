@@ -1,0 +1,56 @@
+[
+  {
+    "TimeCreated": "2026-10-24T12:00:00",
+    "EventID": 4625,
+    "TargetUserName": "svc_backup",
+    "IpAddress": "203.0.113.88",
+    "LogonType": 3,
+    "Status": "0xC000006A",
+    "WorkstationName": "REMOTE-CLI"
+  },
+  {
+    "TimeCreated": "2026-10-24T12:00:20",
+    "EventID": 4625,
+    "TargetUserName": "svc_backup",
+    "IpAddress": "203.0.113.88",
+    "LogonType": 3,
+    "Status": "0xC000006A",
+    "WorkstationName": "REMOTE-CLI"
+  },
+  {
+    "TimeCreated": "2026-10-24T12:00:40",
+    "EventID": 4625,
+    "TargetUserName": "svc_backup",
+    "IpAddress": "203.0.113.88",
+    "LogonType": 3,
+    "Status": "0xC000006A",
+    "WorkstationName": "REMOTE-CLI"
+  },
+  {
+    "TimeCreated": "2026-10-24T12:01:00",
+    "EventID": 4625,
+    "TargetUserName": "svc_backup",
+    "IpAddress": "203.0.113.88",
+    "LogonType": 3,
+    "Status": "0xC000006A",
+    "WorkstationName": "REMOTE-CLI"
+  },
+  {
+    "TimeCreated": "2026-10-24T12:01:20",
+    "EventID": 4625,
+    "TargetUserName": "svc_backup",
+    "IpAddress": "203.0.113.88",
+    "LogonType": 3,
+    "Status": "0xC000006A",
+    "WorkstationName": "REMOTE-CLI"
+  },
+  {
+    "TimeCreated": "2026-10-24T12:01:55",
+    "EventID": 4624,
+    "TargetUserName": "svc_backup",
+    "IpAddress": "203.0.113.88",
+    "LogonType": 3,
+    "Status": "0x0",
+    "WorkstationName": "REMOTE-CLI"
+  }
+]

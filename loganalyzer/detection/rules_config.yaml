@@ -1,0 +1,72 @@
+# Detection Engine Rule Configuration
+# Thresholds and time windows for LogAnalyzer Pro
+
+rules:
+  brute_force:
+    enabled: true
+    rule_id: "RULE_BRUTE_FORCE"
+    rule_name: "Brute-Force Authentication Attempt"
+    severity: "HIGH"
+    threshold: 5
+    time_window_minutes: 10
+    description: "High volume of failed authentication attempts against a specific account or from a single IP within a short window."
+
+  password_spraying:
+    enabled: true
+    rule_id: "RULE_PASSWORD_SPRAY"
+    rule_name: "Password Spraying Attack"
+    severity: "HIGH"
+    min_accounts: 3
+    max_failures_per_account: 4
+    time_window_minutes: 15
+    description: "Attempts against multiple distinct accounts from the same source IP within a short window to evade single-account lockout thresholds."
+
+  suspicious_success:
+    enabled: true
+    rule_id: "RULE_SUSPICIOUS_SUCCESS"
+    rule_name: "Suspicious Successful Login After Repeated Failures"
+    severity: "CRITICAL"
+    min_failures_before_success: 3
+    time_window_minutes: 15
+    description: "A successful authentication immediately preceded by multiple failed login attempts from the same source IP or for the same username."
+
+  multi_account_fail:
+    enabled: true
+    rule_id: "RULE_MULTI_ACCOUNT_FAIL"
+    rule_name: "Multiple Account Failures from Single Source IP"
+    severity: "MEDIUM"
+    min_accounts: 4
+    min_failures: 6
+    time_window_minutes: 20
+    description: "A single source IP generated authentication failures across multiple distinct target user accounts."
+
+  suspicious_login:
+    enabled: true
+    rule_id: "RULE_SUSPICIOUS_LOGIN"
+    rule_name: "Suspicious Privileged Account Login"
+    severity: "HIGH"
+    privileged_accounts:
+      - "root"
+      - "administrator"
+      - "admin"
+      - "system"
+      - "sa"
+      - "oracle"
+    description: "Successful authentication to an inherently high-privilege account originating from an external or non-whitelisted source."
+
+  unusual_patterns:
+    enabled: true
+    rule_id: "RULE_UNUSUAL_PATTERNS"
+    rule_name: "Unusual Authentication Pattern (High Burst Rate)"
+    severity: "MEDIUM"
+    burst_threshold: 12
+    burst_window_seconds: 60
+    description: "Abnormally high velocity of authentication transactions within a 60-second window indicative of automated credential stuffing or DoS."
+
+  repeated_suspicious_ip:
+    enabled: true
+    rule_id: "RULE_REPEATED_SUSPICIOUS_IP"
+    rule_name: "Repeated Suspicious Source IP Activity"
+    severity: "HIGH"
+    min_detections: 2
+    description: "A source IP exhibiting recurring suspicious behaviours across multiple time intervals or detection types."

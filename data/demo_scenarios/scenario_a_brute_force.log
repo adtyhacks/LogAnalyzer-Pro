@@ -1,0 +1,9 @@
+# SYNTHETIC SECURITY LOG — SCENARIO A: SSH BRUTE FORCE ATTACK
+# Description: 7 repeated failed attempts against 'root' from 198.51.100.110
+Oct 24 10:00:00 edge-router sshd[3312]: Failed password for root from 198.51.100.110 port 44102 ssh2
+Oct 24 10:00:12 edge-router sshd[3312]: Failed password for root from 198.51.100.110 port 44102 ssh2
+Oct 24 10:00:24 edge-router sshd[3312]: Failed password for root from 198.51.100.110 port 44102 ssh2
+Oct 24 10:00:36 edge-router sshd[3312]: Failed password for root from 198.51.100.110 port 44102 ssh2
+Oct 24 10:00:48 edge-router sshd[3312]: Failed password for root from 198.51.100.110 port 44102 ssh2
+Oct 24 10:01:00 edge-router sshd[3312]: Failed password for root from 198.51.100.110 port 44102 ssh2
+Oct 24 10:01:12 edge-router sshd[3312]: Failed password for root from 198.51.100.110 port 44102 ssh2

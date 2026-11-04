@@ -1,0 +1,53 @@
+{
+  "techniques": [
+    {
+      "technique_id": "T1110.001",
+      "name": "Brute Force: Password Guessing",
+      "tactic": "Credential Access",
+      "description": "Adversaries may aggressively guess passwords for a specific target account to achieve authentication access.",
+      "url": "https://attack.mitre.org/techniques/T1110/001/"
+    },
+    {
+      "technique_id": "T1110.003",
+      "name": "Brute Force: Password Spraying",
+      "tactic": "Credential Access",
+      "description": "Adversaries may use a single or small set of common passwords against many different user accounts to acquire valid credentials while evading account-lockout thresholds.",
+      "url": "https://attack.mitre.org/techniques/T1110/003/"
+    },
+    {
+      "technique_id": "T1078",
+      "name": "Valid Accounts",
+      "tactic": "Initial Access / Persistence / Privilege Escalation / Defense Evasion",
+      "description": "Adversaries may obtain and abuse credentials of existing accounts as a means of gaining Initial Access, Persistence, Privilege Escalation, or Defense Evasion.",
+      "url": "https://attack.mitre.org/techniques/T1078/"
+    },
+    {
+      "technique_id": "T1078.001",
+      "name": "Valid Accounts: Default Accounts",
+      "tactic": "Initial Access / Persistence",
+      "description": "Adversaries may obtain and abuse default accounts (such as admin or guest) that are pre-configured on devices or applications.",
+      "url": "https://attack.mitre.org/techniques/T1078/001/"
+    },
+    {
+      "technique_id": "T1078.003",
+      "name": "Valid Accounts: Local Accounts",
+      "tactic": "Initial Access / Persistence / Defense Evasion",
+      "description": "Adversaries may obtain and abuse credentials of local computer accounts such as local root or Administrator.",
+      "url": "https://attack.mitre.org/techniques/T1078/003/"
+    },
+    {
+      "technique_id": "T1068",
+      "name": "Exploitation for Privilege Escalation",
+      "tactic": "Privilege Escalation",
+      "description": "Adversaries may exploit software vulnerabilities or configuration flaws in elevated permissions mechanisms like sudo or Windows token assignments.",
+      "url": "https://attack.mitre.org/techniques/T1068/"
+    },
+    {
+      "technique_id": "T1499",
+      "name": "Endpoint Denial of Service",
+      "tactic": "Impact",
+      "description": "Adversaries may cause service degradation or account lockouts through excessive high-frequency authentication attempts.",
+      "url": "https://attack.mitre.org/techniques/T1499/"
+    }
+  ]
+}

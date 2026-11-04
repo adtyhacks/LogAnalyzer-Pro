@@ -1,0 +1,26 @@
+# SYNTHETIC SECURITY TEST LOG — FOR LOGANALYZER PRO TESTING ONLY
+# Generated: 2026-11-04T23:00:32.669921
+Oct 24 10:00:00 sec-srv01 sshd[1021]: Accepted publickey for ubuntu from 192.168.1.15 port 49152 ssh2
+Oct 24 10:00:45 sec-srv01 sshd[1021]: Accepted publickey for developer from 192.168.1.20 port 49152 ssh2
+Oct 24 10:01:30 sec-srv01 sshd[1021]: Accepted publickey for analyst from 10.0.0.12 port 49152 ssh2
+Oct 24 10:10:00 sec-srv01 sshd[1452]: Failed password for invalid user admin from 198.51.100.50 port 51234 ssh2
+Oct 24 10:10:15 sec-srv01 sshd[1452]: Failed password for invalid user admin from 198.51.100.50 port 51234 ssh2
+Oct 24 10:10:30 sec-srv01 sshd[1452]: Failed password for invalid user admin from 198.51.100.50 port 51234 ssh2
+Oct 24 10:10:45 sec-srv01 sshd[1452]: Failed password for invalid user admin from 198.51.100.50 port 51234 ssh2
+Oct 24 10:11:00 sec-srv01 sshd[1452]: Failed password for invalid user admin from 198.51.100.50 port 51234 ssh2
+Oct 24 10:11:15 sec-srv01 sshd[1452]: Failed password for invalid user admin from 198.51.100.50 port 51234 ssh2
+Oct 24 10:11:30 sec-srv01 sshd[1452]: Failed password for invalid user admin from 198.51.100.50 port 51234 ssh2
+Oct 24 10:11:45 sec-srv01 sshd[1452]: Failed password for invalid user admin from 198.51.100.50 port 51234 ssh2
+Oct 24 10:25:00 sec-srv01 sshd[1890]: Failed password for alice from 198.51.100.77 port 58921 ssh2
+Oct 24 10:25:20 sec-srv01 sshd[1890]: Failed password for bob from 198.51.100.77 port 58921 ssh2
+Oct 24 10:25:40 sec-srv01 sshd[1890]: Failed password for charlie from 198.51.100.77 port 58921 ssh2
+Oct 24 10:26:00 sec-srv01 sshd[1890]: Failed password for david from 198.51.100.77 port 58921 ssh2
+Oct 24 10:26:20 sec-srv01 sshd[1890]: Failed password for emma from 198.51.100.77 port 58921 ssh2
+Oct 24 10:26:40 sec-srv01 sshd[1890]: Failed password for frank from 198.51.100.77 port 58921 ssh2
+Oct 24 10:40:00 sec-srv01 sshd[2204]: Failed password for deployer from 203.0.113.19 port 60123 ssh2
+Oct 24 10:40:10 sec-srv01 sshd[2204]: Failed password for deployer from 203.0.113.19 port 60123 ssh2
+Oct 24 10:40:20 sec-srv01 sshd[2204]: Failed password for deployer from 203.0.113.19 port 60123 ssh2
+Oct 24 10:40:30 sec-srv01 sshd[2204]: Failed password for deployer from 203.0.113.19 port 60123 ssh2
+Oct 24 10:40:52 sec-srv01 sshd[2210]: Accepted password for deployer from 203.0.113.19 port 60124 ssh2
+Oct 24 10:55:00 sec-srv01 sshd[2400]: Accepted password for root from 198.51.100.99 port 41200 ssh2
+Oct 24 10:55:05 sec-srv01 sudo: deployer : TTY=pts/1 ; PWD=/home/deployer ; USER=root ; COMMAND=/bin/bash

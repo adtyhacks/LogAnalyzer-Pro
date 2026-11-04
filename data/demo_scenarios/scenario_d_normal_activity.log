@@ -1,0 +1,5 @@
+# SYNTHETIC SECURITY LOG — SCENARIO D: NORMAL BASELINE AUTHENTICATION
+# Description: Legitimate corporate users logging in with normal success
+Oct 24 13:00:00 internal-srv01 sshd[5501]: Accepted publickey for sarah.connor from 10.0.1.10 port 51000 ssh2
+Oct 24 13:15:00 internal-srv01 sshd[5501]: Accepted publickey for john.doe from 10.0.1.12 port 51000 ssh2
+Oct 24 13:30:00 internal-srv01 sshd[5501]: Accepted publickey for alice.smith from 10.0.1.15 port 51000 ssh2
