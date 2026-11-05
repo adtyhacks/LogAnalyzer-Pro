@@ -35,8 +35,15 @@ htmlcov/
 *.db-shm
 loganalyzer.db
 
+# Telemetry data and checkpoints (live host/VM logs)
+data/collected/*
+!data/collected/.gitkeep
+data/checkpoints/*
+!data/checkpoints/.gitkeep
+
 # Generated reports & temporary files
 reports/*.pdf
+reports/*.csv
 !reports/.gitkeep
 
 # IDE & OS
