@@ -10,7 +10,7 @@ class SuspiciousLoginRule(BaseDetectionRule):
 
     DEFAULT_RULE_ID = "RULE_SUSPICIOUS_LOGIN"
     DEFAULT_RULE_NAME = "Suspicious Privileged Account Login"
-    DEFAULT_PRIV_ACCOUNTS = ["root", "administrator", "admin", "system", "sa", "oracle"]
+    DEFAULT_PRIV_ACCOUNTS = ["root", "administrator", "admin", "sa", "oracle"]
 
     def __init__(self, config: Optional[Dict[str, Any]] = None):
         cfg = config or {}
@@ -29,15 +29,26 @@ class SuspiciousLoginRule(BaseDetectionRule):
 
         detections: List[DetectionRecord] = []
         for ev in events:
+            if not ev.username:
+                continue
+
+            username_clean = ev.username.strip().lower()
+
+            # Ignore routine internal OS service accounts (SYSTEM, LOCAL/NETWORK SERVICE, computer$)
+            if username_clean in ("system", "local service", "network service") or username_clean.endswith("$"):
+                continue
+
+            # Routine Windows Event ID 4672 without remote network context is standard OS privilege assignment
+            if ev.metadata.get("EventID") == 4672 and not ev.source_ip:
+                continue
+
             # Check successful logins or privilege escalations
             is_success_login = (
                 (ev.status == EventStatus.SUCCESS.value or ev.action in (ActionType.LOGIN.value, ActionType.PRIVILEGE_ESCALATION.value))
-                and ev.username
             )
             if not is_success_login:
                 continue
 
-            username_clean = ev.username.strip().lower()
             if username_clean in self.privileged_accounts:
                 event_ids = [ev.event_id] if ev.event_id else []
                 det = DetectionRecord(

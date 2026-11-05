@@ -131,6 +131,43 @@ class DatabaseManager:
             );
             """)
 
+            # 6. Channel Checkpoints Table (Phase 2 Real-World Incremental Collection)
+            cursor.execute("""
+            CREATE TABLE IF NOT EXISTS channel_checkpoints (
+                channel TEXT PRIMARY KEY,
+                last_record_id INTEGER NOT NULL DEFAULT 0,
+                last_timestamp TEXT,
+                last_collected_at TEXT,
+                total_events_collected INTEGER DEFAULT 0,
+                computer_name TEXT
+            );
+            """)
+
+            # 7. Idempotent Column Migrations for Events Table
+            cursor.execute("PRAGMA table_info(events);")
+            existing_columns = {col[1] for col in cursor.fetchall()}
+
+            migration_columns = [
+                ("hostname", "TEXT"),
+                ("process_id", "INTEGER"),
+                ("process_name", "TEXT"),
+                ("parent_process", "TEXT"),
+                ("command_line", "TEXT"),
+                ("destination_port", "INTEGER"),
+                ("hashes", "TEXT"),
+                ("channel", "TEXT"),
+                ("record_id", "INTEGER"),
+                ("is_synthetic", "INTEGER DEFAULT 0")
+            ]
+
+            for col_name, col_type in migration_columns:
+                if col_name not in existing_columns:
+                    cursor.execute(f"ALTER TABLE events ADD COLUMN {col_name} {col_type};")
+
+            cursor.execute("CREATE INDEX IF NOT EXISTS idx_events_channel_rec ON events(channel, record_id);")
+            cursor.execute("CREATE INDEX IF NOT EXISTS idx_events_hostname ON events(hostname);")
+            cursor.execute("CREATE INDEX IF NOT EXISTS idx_events_proc_name ON events(process_name);")
+
             conn.commit()
 
     # --- Event Methods ---
@@ -153,8 +190,11 @@ class DatabaseManager:
                         INSERT INTO events (
                             timestamp, source_type, event_type, action, status,
                             username, source_ip, destination_ip, port, service,
-                            message, raw_log, metadata, event_hash
-                        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                            message, raw_log, metadata, event_hash,
+                            hostname, process_id, process_name, parent_process,
+                            command_line, destination_port, hashes, channel,
+                            record_id, is_synthetic
+                        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                     """, (
                         ts_str,
                         ev.source_type,
@@ -169,7 +209,17 @@ class DatabaseManager:
                         ev.message,
                         ev.raw_log,
                         json.dumps(ev.metadata),
-                        ev.event_hash
+                        ev.event_hash,
+                        ev.hostname,
+                        ev.process_id,
+                        ev.process_name,
+                        ev.parent_process,
+                        ev.command_line,
+                        ev.destination_port,
+                        ev.hashes,
+                        ev.channel,
+                        ev.record_id,
+                        1 if ev.is_synthetic else 0
                     ))
                     ev.event_id = cursor.lastrowid
                     inserted_count += 1
@@ -193,7 +243,9 @@ class DatabaseManager:
         action: Optional[str] = None,
         source_type: Optional[str] = None,
         start_date: Optional[str] = None,
-        end_date: Optional[str] = None
+        end_date: Optional[str] = None,
+        channel: Optional[str] = None,
+        hostname: Optional[str] = None
     ) -> List[Dict[str, Any]]:
         """Retrieve filtered events using parameterized queries."""
         query = "SELECT * FROM events WHERE 1=1"
@@ -220,6 +272,12 @@ class DatabaseManager:
         if end_date:
             query += " AND timestamp <= ?"
             params.append(end_date)
+        if channel:
+            query += " AND channel = ?"
+            params.append(channel)
+        if hostname:
+            query += " AND hostname = ?"
+            params.append(hostname)
 
         query += " ORDER BY timestamp DESC LIMIT ? OFFSET ?"
         params.extend([limit, offset])
@@ -230,6 +288,50 @@ class DatabaseManager:
             rows = cursor.fetchall()
             return [dict(row) for row in rows]
 
+    # --- Channel Checkpoint Methods (Phase 2) ---
+
+    def get_channel_checkpoint(self, channel: str) -> Optional[Dict[str, Any]]:
+        """Retrieve the last collection checkpoint for a specific log channel."""
+        with self.get_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute(
+                "SELECT channel, last_record_id, last_timestamp, last_collected_at, total_events_collected, computer_name FROM channel_checkpoints WHERE channel = ?",
+                (channel,)
+            )
+            row = cursor.fetchone()
+            return dict(row) if row else None
+
+    def update_channel_checkpoint(
+        self,
+        channel: str,
+        last_record_id: int,
+        last_timestamp: Optional[str] = None,
+        computer_name: Optional[str] = None,
+        new_events_count: int = 0
+    ) -> None:
+        """Upsert a channel checkpoint after a successful collection batch."""
+        now_str = utc_now().isoformat()
+        with self.get_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute("""
+                INSERT INTO channel_checkpoints (channel, last_record_id, last_timestamp, last_collected_at, total_events_collected, computer_name)
+                VALUES (?, ?, ?, ?, ?, ?)
+                ON CONFLICT(channel) DO UPDATE SET
+                    last_record_id = CASE WHEN excluded.last_record_id > channel_checkpoints.last_record_id THEN excluded.last_record_id ELSE channel_checkpoints.last_record_id END,
+                    last_timestamp = COALESCE(excluded.last_timestamp, channel_checkpoints.last_timestamp),
+                    last_collected_at = excluded.last_collected_at,
+                    total_events_collected = channel_checkpoints.total_events_collected + excluded.total_events_collected,
+                    computer_name = COALESCE(excluded.computer_name, channel_checkpoints.computer_name);
+            """, (channel, last_record_id, last_timestamp, now_str, new_events_count, computer_name))
+            conn.commit()
+
+    def get_all_channel_checkpoints(self) -> List[Dict[str, Any]]:
+        """Retrieve all registered channel checkpoints."""
+        with self.get_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute("SELECT * FROM channel_checkpoints ORDER BY channel ASC")
+            return [dict(r) for r in cursor.fetchall()]
+
     def get_all_events_sorted(self) -> List[Dict[str, Any]]:
         """Retrieve all events sorted chronologically for detection and correlation engines."""
         with self.get_connection() as conn:
@@ -237,13 +339,72 @@ class DatabaseManager:
             cursor.execute("SELECT * FROM events ORDER BY timestamp ASC")
             return [dict(row) for row in cursor.fetchall()]
 
+    def row_to_normalized_event(self, row: Dict[str, Any]) -> NormalizedEvent:
+        """Convert a database row dict into a NormalizedEvent object."""
+        raw_ts = row.get("timestamp")
+        try:
+            ts = datetime.fromisoformat(str(raw_ts))
+        except Exception:
+            ts = utc_now()
+
+        meta = row.get("metadata")
+        if isinstance(meta, str) and meta:
+            try:
+                meta = json.loads(meta)
+            except Exception:
+                meta = {}
+        elif not isinstance(meta, dict):
+            meta = {}
+
+        return NormalizedEvent(
+            timestamp=ts,
+            source_type=row.get("source_type") or "generic",
+            event_type=row.get("event_type") or "security",
+            action=row.get("action") or "OTHER",
+            status=row.get("status") or "UNKNOWN",
+            username=row.get("username"),
+            source_ip=row.get("source_ip"),
+            destination_ip=row.get("destination_ip"),
+            port=row.get("port"),
+            service=row.get("service"),
+            message=row.get("message") or "",
+            raw_log=row.get("raw_log") or "",
+            metadata=meta,
+            event_hash=row.get("event_hash") or "",
+            event_id=row.get("id"),
+            hostname=row.get("hostname"),
+            process_id=row.get("process_id"),
+            process_name=row.get("process_name"),
+            parent_process=row.get("parent_process"),
+            command_line=row.get("command_line"),
+            destination_port=row.get("destination_port"),
+            hashes=row.get("hashes"),
+            channel=row.get("channel"),
+            record_id=row.get("record_id"),
+            is_synthetic=bool(row.get("is_synthetic", 0))
+        )
+
+    def get_all_normalized_events(self) -> List[NormalizedEvent]:
+        """Retrieve all database events converted to NormalizedEvent objects."""
+        rows = self.get_all_events_sorted()
+        return [self.row_to_normalized_event(r) for r in rows]
+
     # --- Detection Methods ---
 
     def insert_detection(self, det: DetectionRecord) -> int:
-        """Insert a detection record."""
+        """Insert a detection record or return existing detection ID if already recorded."""
         with self.get_connection() as conn:
             cursor = conn.cursor()
             ts_str = det.timestamp.isoformat() if isinstance(det.timestamp, datetime) else str(det.timestamp)
+
+            cursor.execute("""
+                SELECT id FROM detections
+                WHERE rule_id = ? AND timestamp = ? AND (source_ip = ? OR (source_ip IS NULL AND ? IS NULL))
+            """, (det.rule_id, ts_str, det.source_ip, det.source_ip))
+            existing = cursor.fetchone()
+            if existing:
+                return existing["id"]
+
             cursor.execute("""
                 INSERT INTO detections (
                     rule_id, rule_name, severity, description, timestamp,
@@ -399,6 +560,23 @@ class DatabaseManager:
                 d["related_event_ids"] = json.loads(d["related_event_ids"]) if d["related_event_ids"] else []
                 d["mitre_techniques"] = json.loads(d["mitre_techniques"]) if d["mitre_techniques"] else []
                 d["risk_factors"] = json.loads(d["risk_factors"]) if d["risk_factors"] else []
+
+                # Determine telemetry classification (Genuine vs Synthetic vs Mixed)
+                synth_flags = set()
+                if d["related_event_ids"]:
+                    # Limit to at most 100 IDs to avoid SQL variable limits
+                    ev_subset = d["related_event_ids"][:100]
+                    placeholders = ",".join("?" * len(ev_subset))
+                    cursor.execute(f"SELECT DISTINCT is_synthetic FROM events WHERE id IN ({placeholders})", ev_subset)
+                    synth_flags = {r[0] for r in cursor.fetchall()}
+
+                if len(synth_flags) > 1:
+                    d["telemetry_nature"] = "MIXED"
+                elif 1 in synth_flags:
+                    d["telemetry_nature"] = "SYNTHETIC"
+                else:
+                    d["telemetry_nature"] = "GENUINE"
+
                 results.append(d)
             return results
 
@@ -459,9 +637,15 @@ class DatabaseManager:
         with self.get_connection() as conn:
             cursor = conn.cursor()
 
-            # Total events
+            # Total events and Genuine vs Synthetic breakdown
             cursor.execute("SELECT COUNT(*) FROM events")
             total_events = cursor.fetchone()[0]
+
+            cursor.execute("SELECT COUNT(*) FROM events WHERE is_synthetic = 0")
+            genuine_events = cursor.fetchone()[0]
+
+            cursor.execute("SELECT COUNT(*) FROM events WHERE is_synthetic = 1")
+            synthetic_events = cursor.fetchone()[0]
 
             # Total detections
             cursor.execute("SELECT COUNT(*) FROM detections")
@@ -512,8 +696,33 @@ class DatabaseManager:
             """)
             mitre_dist = [dict(row) for row in cursor.fetchall()]
 
+            # Platform breakdown (Windows vs Linux vs Other)
+            cursor.execute("""
+                SELECT 
+                    CASE 
+                        WHEN source_type LIKE '%linux%' OR source_type LIKE '%auth%' OR channel LIKE '%linux%' THEN 'Linux'
+                        WHEN source_type LIKE '%windows%' OR source_type LIKE '%sysmon%' OR channel IN ('Security', 'Application', 'System') THEN 'Windows'
+                        ELSE 'Generic / Other'
+                    END as platform,
+                    COUNT(*) as cnt
+                FROM events
+                GROUP BY platform
+            """)
+            platform_dist = [dict(row) for row in cursor.fetchall()]
+
+            # Hostname / Endpoint breakdown
+            cursor.execute("""
+                SELECT hostname, COUNT(*) as cnt
+                FROM events
+                WHERE hostname IS NOT NULL AND hostname != ''
+                GROUP BY hostname ORDER BY cnt DESC LIMIT 10
+            """)
+            host_dist = [dict(row) for row in cursor.fetchall()]
+
             return {
                 "total_events": total_events,
+                "genuine_events": genuine_events,
+                "synthetic_events": synthetic_events,
                 "total_detections": total_detections,
                 "critical_count": det_severities.get("CRITICAL", 0),
                 "high_count": det_severities.get("HIGH", 0),
@@ -525,7 +734,9 @@ class DatabaseManager:
                 "unique_suspicious_ips": suspicious_ips_count,
                 "top_accounts": top_accounts,
                 "top_ips": top_ips,
-                "mitre_distribution": mitre_dist
+                "mitre_distribution": mitre_dist,
+                "platform_distribution": platform_dist,
+                "endpoint_distribution": host_dist
             }
 
     def clear_database(self):

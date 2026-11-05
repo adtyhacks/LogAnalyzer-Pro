@@ -12,12 +12,14 @@ def render_incidents(db: DatabaseManager):
     st.caption("Investigate correlated security incidents, manage investigation lifecycle, and record evidence.")
 
     # Filtering & Search Controls
-    f1, f2, f3 = st.columns([1, 1, 2])
+    f1, f2, f3, f4 = st.columns([1, 1, 1, 2])
     with f1:
         status_filter = st.selectbox("Status Filter", ["ALL", "OPEN", "INVESTIGATING", "RESOLVED"])
     with f2:
         severity_filter = st.selectbox("Severity Filter", ["ALL", "CRITICAL", "HIGH", "MEDIUM", "LOW"])
     with f3:
+        origin_filter = st.selectbox("Origin Filter", ["ALL", "GENUINE", "SYNTHETIC", "MIXED"])
+    with f4:
         search_query = st.text_input("Search Incidents (ID, Title, IP, Account)", placeholder="e.g. 198.51.100.5 or admin")
 
     filter_status = None if status_filter == "ALL" else status_filter
@@ -25,6 +27,9 @@ def render_incidents(db: DatabaseManager):
     filter_q = search_query.strip() if search_query.strip() else None
 
     incidents = db.get_incidents(status=filter_status, severity=filter_sev, search_query=filter_q)
+
+    if origin_filter != "ALL":
+        incidents = [inc for inc in incidents if inc.get("telemetry_nature") == origin_filter]
 
     if not incidents:
         st.info("No security incidents matching current filter criteria.")
@@ -52,6 +57,9 @@ def render_incidents(db: DatabaseManager):
     with d2:
         st.markdown(f"**Severity:** {selected_inc['severity']}")
         st.markdown(f"**Status:** {selected_inc['status']}")
+        nature = selected_inc.get("telemetry_nature", "GENUINE")
+        nature_badge = "🌐 Mixed Investigation" if nature == "MIXED" else ("🧪 Synthetic Lab" if nature == "SYNTHETIC" else "🛡️ Genuine Host")
+        st.markdown(f"**Origin:** `{nature_badge}`")
 
     with d3:
         st.markdown(f"**Risk Score:** `{selected_inc['risk_score']}/100`")

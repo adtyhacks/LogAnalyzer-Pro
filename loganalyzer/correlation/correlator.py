@@ -122,6 +122,30 @@ class CorrelationEngine:
             if severity_order.get(d.severity, 1) > severity_order.get(max_sev, 1):
                 max_sev = d.severity
 
+        # Identify platforms and endpoints involved across correlated events
+        matched_events = [ev for ev in all_events if ev.event_id in related_event_ids]
+        if not matched_events and primary_ip:
+            cluster_start = cluster[0].timestamp - self.correlation_window
+            cluster_end = cluster[-1].timestamp + self.correlation_window
+            matched_events = [
+                ev for ev in all_events
+                if ev.source_ip == primary_ip and cluster_start <= ev.timestamp <= cluster_end
+            ]
+
+        platforms: Set[str] = set()
+        endpoints: Set[str] = set()
+        for ev in matched_events:
+            if ev.hostname:
+                endpoints.add(ev.hostname)
+            src = (ev.source_type or "").lower()
+            ch = (ev.channel or "").lower()
+            if "linux" in src or "auth" in src or "journal" in ch or "linux" in ch:
+                platforms.add("Linux")
+            elif "windows" in src or "sysmon" in src or "security" in ch or "application" in ch:
+                platforms.add("Windows")
+
+        is_cross_platform = ("Linux" in platforms and "Windows" in platforms)
+
         # Calculate explainable risk score
         risk_score, risk_factors = self.risk_scorer.calculate_score(
             severity=max_sev,
@@ -132,6 +156,11 @@ class CorrelationEngine:
             technique_count=len(mitre_techniques),
             detection_count=len(cluster)
         )
+
+        if is_cross_platform:
+            risk_score = min(100.0, round(risk_score + 15.0, 1))
+            hosts_str = ", ".join(sorted(endpoints)) if endpoints else "multiple endpoints"
+            risk_factors.append(f"Cross-Platform Activity: Attack actor targeted both Linux and Windows systems ({hosts_str})")
 
         # Overall incident severity derived from risk score
         overall_severity = self.risk_scorer.map_score_to_severity(risk_score)
@@ -146,7 +175,9 @@ class CorrelationEngine:
 
         # Build Title and Description
         rule_names = sorted(list({d.rule_name for d in cluster}))
-        if has_suspicious_success:
+        if is_cross_platform:
+            title = f"Cross-Platform Multi-Host Attack Campaign ({primary_ip or 'Distributed'})"
+        elif has_suspicious_success:
             title = f"Credential Compromise Following Multi-Stage Attack ({primary_ip or 'Internal'})"
         elif "Password Spraying Attack" in rule_names:
             title = f"Distributed Password Spray Campaign ({primary_ip or 'Unknown IP'})"
@@ -160,6 +191,8 @@ class CorrelationEngine:
             f"from IP '{primary_ip or 'Unknown'}'. Observed attack patterns: {', '.join(rule_names)}. "
             f"Techniques identified: {', '.join(mitre_techniques) if mitre_techniques else 'None'}."
         )
+        if is_cross_platform:
+            desc += f" Cross-platform threat verified across Linux and Windows telemetry (Endpoints: {', '.join(sorted(endpoints)) if endpoints else 'N/A'})."
 
         return IncidentRecord(
             incident_id=incident_id,

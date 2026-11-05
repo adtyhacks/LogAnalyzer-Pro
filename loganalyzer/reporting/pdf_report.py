@@ -15,6 +15,7 @@ from reportlab.platypus import (
 from reportlab.pdfgen import canvas
 
 from loganalyzer.config import REPORTS_DIR, utc_now
+from loganalyzer.utils import sanitize_privacy
 
 
 class NumberedCanvas(canvas.Canvas):
@@ -172,8 +173,8 @@ class PdfReportGenerator:
                 Paragraph("Complete Workspace Ingestion", table_cell_style)
             ],
             [
-                Paragraph("<b>Total Events Analyzed:</b>", table_cell_style),
-                Paragraph(str(stats_summary.get("total_events", 0)), table_cell_style),
+                Paragraph("<b>Total Records Analyzed:</b>", table_cell_style),
+                Paragraph(f"{stats_summary.get('total_events', 0)} (Gen: {stats_summary.get('genuine_events', 0)} | Synth: {stats_summary.get('synthetic_events', 0)})", table_cell_style),
                 Paragraph("<b>Total Detections:</b>", table_cell_style),
                 Paragraph(str(stats_summary.get("total_detections", 0)), table_cell_style)
             ],
@@ -197,9 +198,13 @@ class PdfReportGenerator:
 
         # 2. Executive Summary
         elements.append(Paragraph("1. Executive Summary", heading2_style))
+        gen_cnt = stats_summary.get('genuine_events', 0)
+        syn_cnt = stats_summary.get('synthetic_events', 0)
+        tot_cnt = stats_summary.get('total_events', 0)
         exec_text = (
             f"During the security log analysis, LogAnalyzer Pro ingested and evaluated "
-            f"<b>{stats_summary.get('total_events', 0)}</b> security events across multiple operational log formats. "
+            f"<b>{tot_cnt} total telemetry records</b> (comprising <b>{gen_cnt} genuine host records</b> "
+            f"and <b>{syn_cnt} controlled simulation records</b>) across multiple operational log formats. "
             f"The modular detection engine generated <b>{stats_summary.get('total_detections', 0)}</b> detection alerts, "
             f"including <b>{stats_summary.get('critical_count', 0)} Critical</b>, "
             f"<b>{stats_summary.get('high_count', 0)} High</b>, and <b>{stats_summary.get('medium_count', 0)} Medium</b> severity findings. "
@@ -216,6 +221,7 @@ class PdfReportGenerator:
                 Paragraph("Incident ID", table_header_style),
                 Paragraph("Severity", table_header_style),
                 Paragraph("Risk", table_header_style),
+                Paragraph("Origin", table_header_style),
                 Paragraph("Source IP", table_header_style),
                 Paragraph("Title & Summary", table_header_style),
                 Paragraph("MITRE ATT&CK", table_header_style)
@@ -225,20 +231,26 @@ class PdfReportGenerator:
             for inc in incidents[:15]:  # Top 15 incidents
                 sev = inc.get("severity", "LOW")
                 techs = ", ".join(inc.get("mitre_techniques", [])) or "N/A"
-                accts = ", ".join(inc.get("affected_accounts", [])) or "None"
+                raw_accts = inc.get("affected_accounts", [])
+                accts_clean = sanitize_privacy(raw_accts) if isinstance(raw_accts, list) else [sanitize_privacy(str(raw_accts))]
+                accts = ", ".join(accts_clean) or "None"
+                nature = inc.get("telemetry_nature", "GENUINE")
 
-                desc_text = f"<b>{inc.get('title', '')}</b><br/>{inc.get('description', '')[:140]}...<br/><i>Target(s): {accts}</i>"
+                clean_title = sanitize_privacy(inc.get('title', ''))
+                clean_desc = sanitize_privacy(inc.get('description', ''))
+                desc_text = f"<b>{clean_title}</b><br/>{clean_desc[:130]}...<br/><i>Target(s): {accts}</i>"
 
                 inc_rows.append([
                     Paragraph(inc.get("incident_id", ""), table_cell_style),
                     Paragraph(f"<b>{sev}</b>", table_cell_style),
                     Paragraph(f"{inc.get('risk_score', 0)}/100", table_cell_style),
+                    Paragraph(f"<b>{nature}</b>", table_cell_style),
                     Paragraph(inc.get("source_ip", "N/A") or "N/A", table_cell_style),
                     Paragraph(desc_text, table_cell_style),
                     Paragraph(techs, table_cell_style)
                 ])
 
-            col_widths = [1.1 * inch, 0.7 * inch, 0.6 * inch, 1.0 * inch, 2.5 * inch, 1.1 * inch]
+            col_widths = [1.0 * inch, 0.6 * inch, 0.5 * inch, 0.8 * inch, 0.9 * inch, 2.2 * inch, 1.0 * inch]
             inc_table = Table(inc_rows, colWidths=col_widths, repeatRows=1)
             inc_table.setStyle(TableStyle([
                 ('BACKGROUND', (0, 0), (-1, 0), primary_color),

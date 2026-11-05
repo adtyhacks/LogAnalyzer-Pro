@@ -1,7 +1,7 @@
 """Normalized event schema and data models for LogAnalyzer Pro."""
 
 from dataclasses import dataclass, field, asdict
-from datetime import datetime
+from datetime import datetime, timezone
 from enum import Enum
 import hashlib
 import json
@@ -43,8 +43,8 @@ class IncidentStatus(str, Enum):
 class NormalizedEvent:
     """Standardized representation of a security log event across all formats."""
     timestamp: datetime
-    source_type: str  # linux_auth, windows_events, generic_json, generic_csv
-    event_type: str   # authentication, system, privilege, network
+    source_type: str  # linux_auth, windows_events, sysmon, generic_json, generic_csv
+    event_type: str   # authentication, system, privilege, network, process, file, registry, account_management
     action: str       # LOGIN, FAILED_LOGIN, SUDO, etc.
     status: str       # SUCCESS, FAILURE, UNKNOWN
     username: Optional[str] = None
@@ -58,12 +58,37 @@ class NormalizedEvent:
     event_hash: str = ""
     event_id: Optional[int] = None
 
+    # Endpoint & Extended Telemetry fields (Phase 2 Real-World Upgrade)
+    hostname: Optional[str] = None
+    process_id: Optional[int] = None
+    process_name: Optional[str] = None
+    parent_process: Optional[str] = None
+    command_line: Optional[str] = None
+    destination_port: Optional[int] = None
+    hashes: Optional[str] = None
+    channel: Optional[str] = None
+    record_id: Optional[int] = None
+    is_synthetic: bool = False
+
     def __post_init__(self):
+        # Ensure timestamp is consistently UTC timezone-aware
+        if isinstance(self.timestamp, datetime):
+            if self.timestamp.tzinfo is None:
+                self.timestamp = self.timestamp.replace(tzinfo=timezone.utc)
+            else:
+                self.timestamp = self.timestamp.astimezone(timezone.utc)
+
         if not self.event_hash:
             self.event_hash = self.compute_hash()
 
     def compute_hash(self) -> str:
         """Compute SHA256 deterministic hash to prevent duplicate event ingestion."""
+        # For native Windows/Sysmon events with RecordID and Channel, use authoritative event identity
+        if self.record_id is not None and self.channel:
+            host_part = self.hostname or ""
+            payload = f"winevent|{self.channel}|{host_part}|{self.record_id}"
+            return hashlib.sha256(payload.encode('utf-8', errors='ignore')).hexdigest()
+
         ts_str = self.timestamp.isoformat() if isinstance(self.timestamp, datetime) else str(self.timestamp)
         payload = f"{ts_str}|{self.source_type}|{self.username or ''}|{self.source_ip or ''}|{self.action}|{self.status}|{self.raw_log.strip()}"
         return hashlib.sha256(payload.encode('utf-8', errors='ignore')).hexdigest()
@@ -73,6 +98,20 @@ class NormalizedEvent:
         if isinstance(d["timestamp"], datetime):
             d["timestamp"] = d["timestamp"].isoformat()
         return d
+
+
+@dataclass
+class ChannelCheckpoint:
+    """Checkpoint record for incremental event log collection."""
+    channel: str
+    last_record_id: int = 0
+    last_timestamp: Optional[str] = None
+    last_collected_at: Optional[str] = None
+    total_events_collected: int = 0
+    computer_name: Optional[str] = None
+
+    def to_dict(self) -> Dict[str, Any]:
+        return asdict(self)
 
 
 @dataclass

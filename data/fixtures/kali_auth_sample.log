@@ -1,0 +1,14 @@
+Nov 05 06:10:01 kali sshd[1401]: Failed password for invalid user admin from 192.168.1.150 port 49152 ssh2
+Nov 05 06:10:05 kali sshd[1402]: Failed password for invalid user test from 192.168.1.150 port 49153 ssh2
+Nov 05 06:10:10 kali sshd[1403]: Failed password for invalid user oracle from 192.168.1.150 port 49154 ssh2
+Nov 05 06:10:15 kali sshd[1404]: Failed password for invalid user guest from 192.168.1.150 port 49155 ssh2
+Nov 05 06:15:20 kali sshd[1410]: Failed password for deployer from 192.168.1.180 port 51201 ssh2
+Nov 05 06:15:25 kali sshd[1411]: Failed password for developer from 192.168.1.180 port 51202 ssh2
+Nov 05 06:15:30 kali sshd[1412]: Failed password for webadmin from 192.168.1.180 port 51203 ssh2
+Nov 05 06:20:00 kali sshd[1420]: Failed password for kali from 192.168.1.200 port 52100 ssh2
+Nov 05 06:20:05 kali sshd[1421]: Failed password for kali from 192.168.1.200 port 52101 ssh2
+Nov 05 06:20:10 kali sshd[1422]: Failed password for kali from 192.168.1.200 port 52102 ssh2
+Nov 05 06:20:20 kali sshd[1423]: Accepted publickey for kali from 192.168.1.200 port 52104 ssh2
+Nov 05 06:22:00 kali sudo: kali : TTY=pts/0 ; PWD=/home/kali ; USER=root ; COMMAND=/usr/bin/cat /etc/shadow
+Nov 05 06:25:00 kali sshd[1430]: Failed password for root from 2001:db8::10 port 53100 ssh2
+Nov 05 06:25:05 kali sshd[1431]: Accepted password for root from ::1 port 53102 ssh2

@@ -88,3 +88,60 @@ def test_csv_exports():
     inc_csv = CsvExporter.export_incidents(incidents)
     assert "INC-001" in inc_csv
     assert "user1; user2" in inc_csv
+
+
+def test_csv_export_events_no_row_duplication():
+    events = [
+        {
+            "id": 1,
+            "timestamp": "2026-11-05T08:00:00Z",
+            "hostname": "kali-demo",
+            "source_type": "linux_auth",
+            "event_type": "authentication",
+            "action": "LOGIN",
+            "status": "SUCCESS",
+            "username": "developer",
+            "source_ip": "192.168.1.50",
+            "port": 51200,
+            "service": "sshd",
+            "is_synthetic": 1,
+            "message": "Accepted publickey for developer"
+        }
+    ]
+    evt_csv = CsvExporter.export_events(events)
+    lines = [line for line in evt_csv.strip().split("\r\n") if line]
+    # Header + 1 event row = 2 lines (proves no duplicate row writing)
+    assert len(lines) == 2, f"Expected header + 1 data line, got {len(lines)}"
+    assert "SYNTHETIC (Lab)" in evt_csv
+
+
+def test_privacy_sanitization_in_exports():
+    from loganalyzer.utils import sanitize_privacy
+
+    raw_text = "Login failure for aadityanaira@gmail.com on C:\\Users\\aadit\\Desktop"
+    sanitized = sanitize_privacy(raw_text)
+    assert "aadityanaira@gmail.com" not in sanitized
+    assert "operator@corp.internal" in sanitized
+    assert "C:\\Users\\aadit" not in sanitized
+
+    # In incidents export
+    incidents = [
+        {
+            "incident_id": "INC-002",
+            "title": "Compromise of aadityanaira@gmail.com",
+            "severity": "HIGH",
+            "risk_score": 85.0,
+            "status": "OPEN",
+            "created_at": "2026-11-05 10:00:00",
+            "updated_at": "2026-11-05 10:05:00",
+            "source_ip": "10.0.0.1",
+            "affected_accounts": ["aadit", "aadityanaira@gmail.com"],
+            "mitre_techniques": ["T1078"],
+            "description": "User aadit profile accessed at C:\\Users\\aadit"
+        }
+    ]
+    inc_csv = CsvExporter.export_incidents(incidents)
+    assert "aadityanaira@gmail.com" not in inc_csv
+    assert "aadit" not in inc_csv.lower()
+    assert "operator_admin" in inc_csv
+

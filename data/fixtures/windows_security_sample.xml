@@ -1,0 +1,213 @@
+<Events>
+  <Event xmlns="http://schemas.microsoft.com/win/2004/08/events/event">
+    <System>
+      <Provider Name="Microsoft-Windows-Security-Auditing" Guid="{54849625-5478-4994-a5ba-3e3b0328c30d}" />
+      <EventID>4624</EventID>
+      <Version>2</Version>
+      <Level>0</Level>
+      <Task>12544</Task>
+      <Opcode>0</Opcode>
+      <Keywords>0x8020000000000000</Keywords>
+      <TimeCreated SystemTime="2026-11-05T01:15:30.123456Z" />
+      <EventRecordID>10001</EventRecordID>
+      <Channel>Security</Channel>
+      <Computer>SOC-WORKSTATION.corp.local</Computer>
+      <Security />
+    </System>
+    <EventData>
+      <Data Name="SubjectUserSid">S-1-5-18</Data>
+      <Data Name="SubjectUserName">SYSTEM</Data>
+      <Data Name="SubjectDomainName">NT AUTHORITY</Data>
+      <Data Name="TargetUserSid">S-1-5-21-12345-67890-11111-1001</Data>
+      <Data Name="TargetUserName">analyst_jane</Data>
+      <Data Name="TargetDomainName">CORP</Data>
+      <Data Name="LogonType">2</Data>
+      <Data Name="LogonProcessName">User32</Data>
+      <Data Name="AuthenticationPackageName">Negotiate</Data>
+      <Data Name="WorkstationName">SOC-WORKSTATION</Data>
+      <Data Name="IpAddress">192.168.1.105</Data>
+      <Data Name="IpPort">54321</Data>
+      <Data Name="ProcessId">0x3e8</Data>
+      <Data Name="ProcessName">C:\Windows\System32\winlogon.exe</Data>
+    </EventData>
+  </Event>
+
+  <Event xmlns="http://schemas.microsoft.com/win/2004/08/events/event">
+    <System>
+      <Provider Name="Microsoft-Windows-Security-Auditing" Guid="{54849625-5478-4994-a5ba-3e3b0328c30d}" />
+      <EventID>4625</EventID>
+      <Version>0</Version>
+      <Level>0</Level>
+      <Task>12544</Task>
+      <Opcode>0</Opcode>
+      <Keywords>0x8010000000000000</Keywords>
+      <TimeCreated SystemTime="2026-11-05T01:16:10.654321Z" />
+      <EventRecordID>10002</EventRecordID>
+      <Channel>Security</Channel>
+      <Computer>SOC-WORKSTATION.corp.local</Computer>
+      <Security />
+    </System>
+    <EventData>
+      <Data Name="SubjectUserSid">S-1-5-18</Data>
+      <Data Name="SubjectUserName">SYSTEM</Data>
+      <Data Name="TargetUserName">administrator</Data>
+      <Data Name="TargetDomainName">CORP</Data>
+      <Data Name="Status">0xC000006D</Data>
+      <Data Name="FailureReason">%%2313</Data>
+      <Data Name="SubStatus">0xC000006A</Data>
+      <Data Name="LogonType">3</Data>
+      <Data Name="WorkstationName">ATTACKER-BOX</Data>
+      <Data Name="IpAddress">203.0.113.88</Data>
+      <Data Name="IpPort">49152</Data>
+    </EventData>
+  </Event>
+
+  <Event xmlns="http://schemas.microsoft.com/win/2004/08/events/event">
+    <System>
+      <Provider Name="Microsoft-Windows-Security-Auditing" Guid="{54849625-5478-4994-a5ba-3e3b0328c30d}" />
+      <EventID>4634</EventID>
+      <Version>0</Version>
+      <Level>0</Level>
+      <Task>12545</Task>
+      <Opcode>0</Opcode>
+      <Keywords>0x8020000000000000</Keywords>
+      <TimeCreated SystemTime="2026-11-05T02:00:00.000000Z" />
+      <EventRecordID>10003</EventRecordID>
+      <Channel>Security</Channel>
+      <Computer>SOC-WORKSTATION.corp.local</Computer>
+    </System>
+    <EventData>
+      <Data Name="TargetUserSid">S-1-5-21-12345-67890-11111-1001</Data>
+      <Data Name="TargetUserName">analyst_jane</Data>
+      <Data Name="TargetDomainName">CORP</Data>
+      <Data Name="LogonType">2</Data>
+    </EventData>
+  </Event>
+
+  <Event xmlns="http://schemas.microsoft.com/win/2004/08/events/event">
+    <System>
+      <Provider Name="Microsoft-Windows-Security-Auditing" Guid="{54849625-5478-4994-a5ba-3e3b0328c30d}" />
+      <EventID>4648</EventID>
+      <Version>0</Version>
+      <Level>0</Level>
+      <Task>12544</Task>
+      <Opcode>0</Opcode>
+      <Keywords>0x8020000000000000</Keywords>
+      <TimeCreated SystemTime="2026-11-05T02:05:00.000000Z" />
+      <EventRecordID>10004</EventRecordID>
+      <Channel>Security</Channel>
+      <Computer>SOC-WORKSTATION.corp.local</Computer>
+    </System>
+    <EventData>
+      <Data Name="SubjectUserName">analyst_jane</Data>
+      <Data Name="TargetUserName">svc_backup</Data>
+      <Data Name="TargetServerName">DC01.corp.local</Data>
+      <Data Name="ProcessName">C:\Windows\System32\runas.exe</Data>
+      <Data Name="IpAddress">192.168.1.105</Data>
+      <Data Name="IpPort">51234</Data>
+    </EventData>
+  </Event>
+
+  <Event xmlns="http://schemas.microsoft.com/win/2004/08/events/event">
+    <System>
+      <Provider Name="Microsoft-Windows-Security-Auditing" Guid="{54849625-5478-4994-a5ba-3e3b0328c30d}" />
+      <EventID>4672</EventID>
+      <Version>0</Version>
+      <Level>0</Level>
+      <Task>12548</Task>
+      <Opcode>0</Opcode>
+      <Keywords>0x8020000000000000</Keywords>
+      <TimeCreated SystemTime="2026-11-05T02:10:00.000000Z" />
+      <EventRecordID>10005</EventRecordID>
+      <Channel>Security</Channel>
+      <Computer>SOC-WORKSTATION.corp.local</Computer>
+    </System>
+    <EventData>
+      <Data Name="SubjectUserName">administrator</Data>
+      <Data Name="SubjectDomainName">CORP</Data>
+      <Data Name="PrivilegeList">SeSecurityPrivilege&#x0D;&#x0A;&#x09;SeBackupPrivilege&#x0D;&#x0A;&#x09;SeRestorePrivilege&#x0D;&#x0A;&#x09;SeDebugPrivilege</Data>
+    </EventData>
+  </Event>
+
+  <Event xmlns="http://schemas.microsoft.com/win/2004/08/events/event">
+    <System>
+      <Provider Name="Microsoft-Windows-Security-Auditing" Guid="{54849625-5478-4994-a5ba-3e3b0328c30d}" />
+      <EventID>4720</EventID>
+      <Version>0</Version>
+      <Level>0</Level>
+      <Task>13824</Task>
+      <Opcode>0</Opcode>
+      <Keywords>0x8020000000000000</Keywords>
+      <TimeCreated SystemTime="2026-11-05T02:15:00.000000Z" />
+      <EventRecordID>10006</EventRecordID>
+      <Channel>Security</Channel>
+      <Computer>SOC-WORKSTATION.corp.local</Computer>
+    </System>
+    <EventData>
+      <Data Name="TargetUserName">backdoor_user</Data>
+      <Data Name="SubjectUserName">administrator</Data>
+    </EventData>
+  </Event>
+
+  <Event xmlns="http://schemas.microsoft.com/win/2004/08/events/event">
+    <System>
+      <Provider Name="Microsoft-Windows-Security-Auditing" Guid="{54849625-5478-4994-a5ba-3e3b0328c30d}" />
+      <EventID>4722</EventID>
+      <Version>0</Version>
+      <Level>0</Level>
+      <Task>13824</Task>
+      <Opcode>0</Opcode>
+      <Keywords>0x8020000000000000</Keywords>
+      <TimeCreated SystemTime="2026-11-05T02:16:00.000000Z" />
+      <EventRecordID>10007</EventRecordID>
+      <Channel>Security</Channel>
+      <Computer>SOC-WORKSTATION.corp.local</Computer>
+    </System>
+    <EventData>
+      <Data Name="TargetUserName">backdoor_user</Data>
+      <Data Name="SubjectUserName">administrator</Data>
+    </EventData>
+  </Event>
+
+  <Event xmlns="http://schemas.microsoft.com/win/2004/08/events/event">
+    <System>
+      <Provider Name="Microsoft-Windows-Security-Auditing" Guid="{54849625-5478-4994-a5ba-3e3b0328c30d}" />
+      <EventID>4728</EventID>
+      <Version>0</Version>
+      <Level>0</Level>
+      <Task>13826</Task>
+      <Opcode>0</Opcode>
+      <Keywords>0x8020000000000000</Keywords>
+      <TimeCreated SystemTime="2026-11-05T02:20:00.000000Z" />
+      <EventRecordID>10008</EventRecordID>
+      <Channel>Security</Channel>
+      <Computer>SOC-WORKSTATION.corp.local</Computer>
+    </System>
+    <EventData>
+      <Data Name="MemberName">CN=backdoor_user,CN=Users,DC=corp,DC=local</Data>
+      <Data Name="TargetUserName">Domain Admins</Data>
+      <Data Name="SubjectUserName">administrator</Data>
+    </EventData>
+  </Event>
+
+  <Event xmlns="http://schemas.microsoft.com/win/2004/08/events/event">
+    <System>
+      <Provider Name="Microsoft-Windows-Security-Auditing" Guid="{54849625-5478-4994-a5ba-3e3b0328c30d}" />
+      <EventID>4740</EventID>
+      <Version>0</Version>
+      <Level>0</Level>
+      <Task>13824</Task>
+      <Opcode>0</Opcode>
+      <Keywords>0x8010000000000000</Keywords>
+      <TimeCreated SystemTime="2026-11-05T02:25:00.000000Z" />
+      <EventRecordID>10009</EventRecordID>
+      <Channel>Security</Channel>
+      <Computer>SOC-WORKSTATION.corp.local</Computer>
+    </System>
+    <EventData>
+      <Data Name="TargetUserName">analyst_jane</Data>
+      <Data Name="SubjectUserName">SYSTEM</Data>
+      <Data Name="CallerComputerName">WORKSTATION-02</Data>
+    </EventData>
+  </Event>
+</Events>

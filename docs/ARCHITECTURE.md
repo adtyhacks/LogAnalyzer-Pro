@@ -1,16 +1,17 @@
-# LogAnalyzer Pro — System Architecture
+# LogAnalyzer Pro — System Architecture (Phase 3: Multi-Endpoint)
 
 ## Overview
 
-**LogAnalyzer Pro** is an intelligent, high-performance security log analysis and incident investigation platform designed for SOC analysts, incident responders, and threat hunters.
+**LogAnalyzer Pro** is an intelligent, high-performance endpoint security log analysis and incident investigation platform designed for SOC analysts, incident responders, and threat hunters.
 
-It employs a decoupled, modular pipeline:
-1. **Ingestion & Normalization:** Ingests heterogeneous security logs (Linux Syslog, Windows Security Events, generic JSON/CSV) and normalizes them into a unified schema (`NormalizedEvent`).
-2. **Persistence Engine:** Efficient SQLite persistence with Write-Ahead Logging (WAL), deterministic SHA-256 event hashing for deduplication, and indexed queries.
-3. **Detection Engine:** Modular, configurable rule evaluation against the normalized event stream, linking each alert to MITRE ATT&CK Enterprise techniques.
-4. **Correlation Engine:** Clusters detections across source IPs, usernames, and temporal windows into holistic security incidents, avoiding duplicate incident tickets.
-5. **Security Intelligence & Risk Scoring:** Computes transparent, explainable 0–100 risk scores based on attack scope, severity, and host behavioral indicators.
-6. **SOC Dashboard & Reporting:** Streamlit frontend with Plotly analytics and automated PDF report generation via ReportLab.
+It employs a decoupled, multi-endpoint pipeline:
+1. **Multi-Source Telemetry Ingestion & Normalization:** Ingests heterogeneous security logs from both **Windows** (native Security Event XML, Sysmon, Application) and **Linux** (Kali Linux `auth.log`, systemd `journalctl` text and NDJSON), as well as generic JSON/CSV, normalizing them into a unified schema (`NormalizedEvent`).
+2. **Incremental Collection & State Checkpointing:** High-water mark state tracking in SQLite (`channel_checkpoints`) and JSON checkpoints (`data/checkpoints/`) enables reliable incremental ingestion.
+3. **Persistence Engine:** Efficient SQLite persistence with Write-Ahead Logging (WAL), deterministic SHA-256 event hashing for 100% duplicate prevention, and indexed parameterized queries.
+4. **Detection Engine:** Modular, configurable rule evaluation against the normalized event stream, linking each alert to MITRE ATT&CK Enterprise techniques (T1110, T1078, T1087, T1499).
+5. **Cross-Platform Correlation Engine:** Clusters detections across source IPs, usernames, endpoints, and temporal windows into holistic security incidents, flagging cross-platform lateral movement between Linux and Windows hosts.
+6. **Security Intelligence & Risk Scoring:** Computes transparent, explainable 0–100 risk scores based on attack scope, severity, and host behavioral indicators.
+7. **Multi-Endpoint SOC Dashboard & Reporting:** Streamlit frontend with Plotly analytics, endpoint and platform filtering, and automated PDF report generation via ReportLab.
 
 ---
 
@@ -18,17 +19,23 @@ It employs a decoupled, modular pipeline:
 
 ```mermaid
 flowchart TD
-    subgraph Ingestion ["Log Ingestion Layer"]
-        A1["Linux auth.log / secure"] --> P1["LinuxAuthParser"]
-        A2["Windows Events (CSV/JSON)"] --> P2["WindowsEventParser"]
-        A3["Generic JSON (NDJSON/Array)"] --> P3["GenericJsonParser"]
-        A4["Generic CSV Logs"] --> P4["GenericCsvParser"]
-        P1 & P2 & P3 & P4 --> NORM["Schema Normalizer (NormalizedEvent)"]
+    subgraph Collectors ["Multi-Endpoint Telemetry Collection Layer"]
+        W1["Windows Host: collect_windows_events.ps1"] --> W_OUT["data/collected/Security_events.xml"]
+        W2["Windows Sysmon: collect_sysmon.ps1"] --> W_SYS["data/collected/sysmon_events.xml"]
+        L1["Kali Linux VM: collect_linux_events.sh"] --> L_OUT["data/collected/kali_auth.log / .json"]
     end
 
-    subgraph Storage ["Persistence Layer (SQLite)"]
+    subgraph Ingestion ["Log Ingestion & Normalization Layer"]
+        W_OUT & W_SYS --> P_WIN["WindowsEventParser / SysmonParser"]
+        L_OUT --> P_LIN["LinuxAuthParser (auth.log & journal NDJSON)"]
+        GEN["Generic JSON / CSV"] --> P_GEN["GenericJsonParser / GenericCsvParser"]
+        P_WIN & P_LIN & P_GEN --> NORM["Schema Normalizer (NormalizedEvent)"]
+    end
+
+    subgraph Storage ["Persistence Layer (SQLite with WAL)"]
         NORM --> DEDUP["SHA-256 Event Deduplicator"]
         DEDUP --> DB[(SQLite Database)]
+        DB --> CHK_TBL["channel_checkpoints table"]
         DB --> EV_TBL["events table"]
         DB --> DET_TBL["detections table"]
         DB --> INC_TBL["incidents table"]
@@ -37,48 +44,43 @@ flowchart TD
 
     subgraph Detection ["Modular Detection Engine"]
         EV_TBL --> DE["DetectionEngine"]
-        DE --> R1["Brute Force (T1110.001)"]
+        DE --> R1["SSH / Windows Brute Force (T1110.001)"]
         DE --> R2["Password Spray (T1110.003)"]
         DE --> R3["Suspicious Success (T1078)"]
         DE --> R4["Multi-Account Fail (T1110.003)"]
         DE --> R5["Privileged Login (T1078.003)"]
-        DE --> R6["Burst Pattern (T1499)"]
-        DE --> R7["Repeated Suspicious IP"]
+        DE --> R6["Invalid User Enumeration (T1087.001)"]
+        DE --> R7["Burst Velocity Pattern (T1499)"]
         R1 & R2 & R3 & R4 & R5 & R6 & R7 --> DET_RECS["Detection Records"]
     end
 
-    subgraph Correlation ["Incident Correlation & Risk Engine"]
+    subgraph Correlation ["Cross-Platform Correlation & Risk Engine"]
         DET_RECS --> CORR["CorrelationEngine"]
         CORR --> INTEL["Offline IP Intelligence"]
         CORR --> MITRE["MITRE ATT&CK Mapper"]
-        CORR --> RS["RiskScorer (0-100 Score)"]
-        RS --> INC_RECS["Incident Records"]
+        CORR --> RS["RiskScorer (0-100 Score + Cross-Platform Multiplier)"]
+        RS --> INC_RECS["Incident Records (Single-Host & Cross-Platform)"]
         INC_RECS --> INC_TBL
     end
 
     subgraph Presentation ["Presentation & Reporting"]
-        DB --> UI["SOC Streamlit Dashboard"]
-        UI --> REP["PdfReportGenerator (ReportLab)"]
-        UI --> EXP["CsvExporter"]
+        DB --> UI["Multi-Endpoint Streamlit SOC Dashboard"]
+        DB --> REP["PDF & CSV Report Generator"]
     end
 ```
 
 ---
 
-## Core Data Schema
+## Data Model Specifications
 
-### `NormalizedEvent`
-- `event_id`: Auto-incrementing database ID.
-- `timestamp`: UTC datetime.
-- `source_type`: `linux_auth`, `windows_events`, `generic_json`, `generic_csv`.
-- `event_type`: `authentication`, `privilege`, `account_management`, `system`.
-- `action`: `LOGIN`, `FAILED_LOGIN`, `SUDO`, `USER_CREATED`, `ACCOUNT_LOCKED`, `OTHER`.
-- `status`: `SUCCESS`, `FAILURE`, `UNKNOWN`.
-- `username`: Target or subject account name.
-- `source_ip`: Source IPv4/IPv6 address.
-- `port`: Connection port.
-- `service`: Daemon or service name (`sshd`, `sudo`, `Security`, etc.).
-- `message`: Human-readable summary.
-- `raw_log`: Verbatim log line.
-- `metadata`: JSON payload containing context-specific attributes (PID, LogonType, etc.).
-- `event_hash`: SHA-256 hash `(timestamp, source_type, user, IP, action, status, raw_log)`.
+- **`NormalizedEvent`**: Unified data class for Linux and Windows telemetry:
+  - `timestamp`: UTC datetime (ISO 8601)
+  - `source_type`: `linux_auth`, `windows_events`, `sysmon`, `generic_json`, `generic_csv`
+  - `event_type`: `authentication`, `privilege`, `system`, `network`, `process`
+  - `action`: `LOGIN`, `FAILED_LOGIN`, `SUDO`, `OTHER`
+  - `status`: `SUCCESS`, `FAILURE`, `UNKNOWN`
+  - `username`, `source_ip` (IPv4 & IPv6), `destination_ip`, `port`
+  - `hostname`, `process_id`, `process_name`, `command_line`
+  - `channel`, `record_id`, `is_synthetic`
+  - `raw_log`: original verbatim record for forensic verification
+  - `event_hash`: deterministic SHA-256 hash

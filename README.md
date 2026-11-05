@@ -1,10 +1,11 @@
 # LogAnalyzer Pro 🛡️
 
-**Intelligent Security Log Analysis & Incident Investigation Platform**
+**Intelligent Multi-Endpoint Security Log Analysis & Incident Investigation Platform**
 
 [![Python Version](https://img.shields.io/badge/python-3.11%2B%20%7C%203.12-blue.svg)](https://www.python.org/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
-[![Tests](https://img.shields.io/badge/tests-33%2F33%20passed-brightgreen.svg)](tests/)
+[![Tests](https://img.shields.io/badge/tests-76%2F76%20passed-brightgreen.svg)](tests/)
+[![Platforms](https://img.shields.io/badge/endpoints-Windows%2011%20%7C%20Kali%20Linux-teal.svg)](docs/LINUX_TELEMETRY.md)
 [![Framework: Streamlit](https://img.shields.io/badge/UI-Streamlit-red.svg)](https://streamlit.io/)
 [![Database: SQLite WAL](https://img.shields.io/badge/database-SQLite%20WAL-lightgrey.svg)](https://sqlite.org/)
 
@@ -12,72 +13,65 @@
 
 ## 1. Professional Introduction
 
-**LogAnalyzer Pro** is an enterprise-grade, autonomous cybersecurity log analysis and incident investigation platform. Designed for Security Operations Center (SOC) teams, incident responders, and threat hunters, the application ingests heterogeneous security logs across Linux and Windows environments, normalizes disparate formats into a common schema, detects complex multi-stage attack patterns using modular behavioral rules, and synthesizes related detections into correlated, explainable security incidents.
+**LogAnalyzer Pro** is an enterprise-grade, autonomous cybersecurity log analysis and incident investigation platform. Designed for Security Operations Center (SOC) teams, incident responders, and threat hunters, the application ingests heterogeneous security telemetry across **Windows endpoints** (native Security Event XML, Sysmon, Application) and **Linux systems** (Kali Linux `auth.log`, systemd `journalctl` text & NDJSON), normalizes disparate formats into a common schema, detects complex multi-stage attack patterns using modular behavioral rules, and synthesizes related detections into correlated, cross-platform security incidents.
 
 Built strictly with free and open-source technologies, LogAnalyzer Pro delivers enterprise SIEM and SOAR investigation capabilities with zero reliance on paid APIs or external database services.
 
 ---
 
-## 2. Problem Statement
-
-Modern enterprise infrastructures generate gigabytes of disparate security logs daily:
-- Linux server authentications (`auth.log` / `secure`)
-- Windows Security Event Logs (`EventID 4624`, `4625`, `4672`, `4720`, `4740`)
-- Cloud gateway, API, and VPN audit logs (JSON, NDJSON, and CSV)
-
-SOC analysts routinely face critical bottlenecks:
-1. **Format Fragmentation:** Incompatible timestamp standards, disparate field nomenclatures, and varying event structures prevent rapid analysis.
-2. **Alert Fatigue:** Naive alerting generates hundreds of disconnected events rather than grouping findings into cohesive attack incidents.
-3. **Misclassified Detections:** Generic tools often treat distributed password spraying attacks as individual single-account brute-force events, obscuring low-and-slow campaigns.
-4. **Opaque Scoring:** Many commercial SIEMs produce black-box risk scores without explaining the specific technical factors behind the metric.
-
-**LogAnalyzer Pro solves these challenges** by providing an end-to-end local SOC platform with normalized schemas, modular behavioral rules, deterministic correlation, explainable 0–100 risk scoring, and publication-ready PDF incident reporting.
-
----
-
-## 3. Key Features
-
-- **Multi-Source Ingestion & Normalization:** Ingests Linux authentication logs, Windows Security Event logs (CSV & JSON), generic NDJSON/JSON arrays, and arbitrary CSV logs into a unified `NormalizedEvent` schema with SHA-256 deduplication.
-- **Advanced Behavioral Detection Engine:** 7 modular detection rules covering brute-force, distributed password spraying, credential compromise (success following repeated failures), multi-account failures, privileged account access, authentication burst velocity, and recurring IP threats.
-- **Incident Correlation & Deduplication:** Clustered temporal correlation that links related alerts by source IP, targeted accounts, and attack windows into unified incident records, preventing duplicate tickets.
-- **MITRE ATT&CK Enterprise Mapping:** All rules are mapped to official MITRE techniques (e.g. `T1110.001`, `T1110.003`, `T1078`, `T1078.003`, `T1499`) using an embedded local dataset.
-- **Explainable 0–100 Risk Scoring:** Transparent scoring engine assessing baseline severity, account blast radius, failure velocity, credential compromise indicators, perimeter exposure, and multi-technique chaining.
-- **Offline IP Intelligence:** RFC 1918 / loopback / public / reserved address profiling, account associations, and behavioral anomaly flagging without external network requests.
-- **SOC Analyst Workbench:** Streamlit-powered dark-mode dashboard featuring Plotly timeline charts, failure trend distributions, interactive incident triage, and analyst case note logging.
-- **Automated Reporting:** Generates professional, multi-page PDF security investigation reports via ReportLab and structured CSV telemetry exports for SIEM archival.
-
----
-
-## 4. Architecture Diagram
+## 2. Multi-Endpoint Architecture
 
 ```mermaid
 flowchart TD
-    subgraph INGESTION ["1. Ingestion & Normalization Layer"]
-        L_LOG["Linux auth.log / secure"] --> L_PARSER["LinuxAuthParser"]
-        W_LOG["Windows Security Events (CSV/JSON)"] --> W_PARSER["WindowsEventParser"]
-        J_LOG["Generic JSON / NDJSON"] --> J_PARSER["GenericJsonParser"]
-        C_LOG["Generic CSV Security Logs"] --> C_PARSER["GenericCsvParser"]
-        L_PARSER & W_PARSER & J_PARSER & C_PARSER --> SCHEMA["Unified NormalizedEvent Schema"]
+    subgraph Collectors ["1. Multi-Endpoint Telemetry Collection Layer"]
+        W1["Windows Host: collect_windows_events.ps1"] --> W_OUT["data/collected/Security_events.xml"]
+        W2["Windows Sysmon: collect_sysmon.ps1"] --> W_SYS["data/collected/sysmon_events.xml"]
+        L1["Kali Linux VM: collect_linux_events.sh"] --> L_OUT["data/collected/kali_auth.log / .json"]
     end
 
-    subgraph STORAGE ["2. Persistence Layer (SQLite + WAL)"]
-        SCHEMA --> HASH["SHA-256 Event Deduplication"]
+    subgraph Ingestion ["2. Ingestion & Normalization Layer"]
+        W_OUT & W_SYS --> P_WIN["WindowsEventParser / SysmonParser"]
+        L_OUT --> P_LIN["LinuxAuthParser (auth.log & journal NDJSON)"]
+        GEN["Generic JSON / CSV"] --> P_GEN["GenericJsonParser / GenericCsvParser"]
+        P_WIN & P_LIN & P_GEN --> NORM["Schema Normalizer (NormalizedEvent)"]
+    end
+
+    subgraph Storage ["3. Persistence Layer (SQLite + WAL)"]
+        NORM --> HASH["SHA-256 Event Deduplication"]
         HASH --> DB[(loganalyzer.db)]
         DB --> T_EVENTS["events table"]
+        DB --> T_CHKS["channel_checkpoints table"]
         DB --> T_DETS["detections table"]
         DB --> T_INCS["incidents table"]
         DB --> T_NOTES["investigation_notes table"]
     end
 
-    subgraph DETECTION ["3. Modular Detection Engine"]
+    subgraph Detection ["4. Modular Detection Engine"]
         T_EVENTS --> ENG["DetectionEngine"]
         ENG --> BF["Brute-Force (T1110.001)"]
         ENG --> PS["Password Spraying (T1110.003)"]
         ENG --> SS["Suspicious Success (T1078)"]
         ENG --> MA["Multi-Account Fail (T1110.003)"]
         ENG --> SL["Privileged Login (T1078.003)"]
-        ENG --> UP["Burst Pattern (T1499)"]
+        ENG --> IU["Invalid User Enumeration (T1087.001)"]
+        ENG --> UP["Burst Velocity Pattern (T1499)"]
         ENG --> RS["Repeated Suspicious IP"]
+    end
+
+    subgraph Correlation ["5. Cross-Platform Correlation & Risk Engine"]
+        ENG --> CORR["CorrelationEngine"]
+        CORR --> INTEL["Offline IP Intelligence"]
+        CORR --> MITRE["MITRE ATT&CK Mapper"]
+        CORR --> RSCORE["RiskScorer (0-100 Score + Cross-Platform Multiplier)"]
+        RSCORE --> INC_RECS["Incident Records (Single-Host & Cross-Platform)"]
+        INC_RECS --> T_INCS
+    end
+
+    subgraph Presentation ["6. Presentation & Reporting"]
+        DB --> UI["Multi-Endpoint Streamlit SOC Dashboard"]
+        DB --> REP["PDF & CSV Report Generator"]
+    end
+```
         BF & PS & SS & MA & SL & UP & RS --> ALERTS["Detection Records"]
     end
 
@@ -214,7 +208,8 @@ Actual genuine screenshots captured from the running LogAnalyzer Pro application
 
 1. **Clone or Navigate to the Repository:**
    ```powershell
-   cd "C:\Users\aadit\OneDrive\Desktop\LOGANALYZER PRO"
+   git clone https://github.com/adtyhacks/LogAnalyzer-Pro.git
+   cd LogAnalyzer-Pro
    ```
 
 2. **Create a Virtual Environment (Recommended):**
@@ -230,7 +225,46 @@ Actual genuine screenshots captured from the running LogAnalyzer Pro application
 
 ---
 
-## 12. Execution Instructions
+## 12. Endpoint Telemetry Collection & Ingestion
+
+### A. Windows Security Event Collection (Host)
+Run an elevated PowerShell window (`Run as administrator`):
+```powershell
+# Collect last 50 Security events into XML
+powershell -ExecutionPolicy Bypass -File scripts\collect_windows_events.ps1 -LogName Security -MaxEvents 50
+
+# Ingest into LogAnalyzer Pro
+python scripts\ingest_collected.py --file data\collected\Security_events.xml
+```
+
+### B. Kali Linux Telemetry Collection (VM / Remote Endpoint)
+On your Kali Linux VM:
+```bash
+# Make collector executable
+chmod +x scripts/collect_linux_events.sh
+
+# Collect authentication events from auth.log or systemd journal
+sudo ./scripts/collect_linux_events.sh -s "24 hours ago" -m 200 -o /tmp/kali_auth.log
+
+# Transfer log to Windows host
+scp /tmp/kali_auth.log user@<WINDOWS_IP>:"C:/path/to/LogAnalyzer-Pro/data/collected/"
+```
+On Windows:
+```powershell
+# Ingest Linux telemetry into LogAnalyzer Pro
+python scripts\ingest_collected.py --file data\collected\kali_auth.log
+```
+
+### C. Controlled Linux Telemetry Lab (One-Command Placement Demo)
+If a physical Kali VM is not running, run the controlled Linux simulation lab:
+```powershell
+python scripts\generate_linux_demo.py --ingest
+```
+This generates authentic Linux Syslog (`linux_demo_auth.log`) and systemd journal NDJSON (`linux_demo_journal.json`), ingests them with `is_synthetic = True`, and demonstrates cross-platform correlation across `kali-demo` and `ADTY` (`198.51.100.99`) with zero duplicate events on re-runs.
+
+---
+
+## 13. Execution Instructions
 
 Launch the Streamlit SOC interface:
 ```powershell
@@ -240,7 +274,7 @@ The interface will automatically open in your default browser at `http://localho
 
 ---
 
-## 13. Demonstration Scenarios
+## 14. Demonstration Scenarios
 
 LogAnalyzer Pro provides ready-to-run synthetic attack datasets in `data/demo_scenarios/`:
 - **Scenario A (Brute Force):** Single IP targeting `root` with 7 consecutive failures.
@@ -258,7 +292,7 @@ For a comprehensive step-by-step SOC walk-through, see the [SOC Demonstration Gu
 
 ## 14. Automated Testing
 
-LogAnalyzer Pro features a 33-test Pytest suite covering all parsers, detection rules, boundary thresholds, correlation clustering, risk scoring, SQLite queries, and report generation.
+LogAnalyzer Pro features an enterprise-grade 76-test Pytest suite covering all Windows Event Log XML & Sysmon parsers, Linux syslog & systemd journal NDJSON parsers, incremental collection checkpoints, boundary conditions, cross-platform correlation clustering, risk scoring, SQLite deduplication, privacy sanitization, and full Streamlit UI AppTest rendering.
 
 Run the test suite:
 ```powershell
@@ -269,46 +303,27 @@ Execution Summary:
 ```
 ============================= test session starts =============================
 platform win32 -- Python 3.12.4, pytest-9.2.0, pluggy-1.7.0
-rootdir: C:\Users\aadit\OneDrive\Desktop\LOGANALYZER PRO
+rootdir: LogAnalyzer-Pro
 configfile: pytest.ini
 testpaths: tests
-collected 33 items
+collected 76 items
 
-tests/test_correlation.py::test_correlation_groups_by_ip_and_avoids_duplicates PASSED
-tests/test_database.py::test_event_insertion_and_deduplication PASSED
-tests/test_database.py::test_detection_persistence PASSED
-tests/test_database.py::test_incident_lifecycle PASSED
-tests/test_database.py::test_ingestion_history_and_stats_summary PASSED
-tests/test_detection_rules.py::test_brute_force_rule_triggers PASSED
-tests/test_detection_rules.py::test_password_spraying_rule_triggers PASSED
-tests/test_detection_rules.py::test_suspicious_success_rule_triggers PASSED
-tests/test_detection_rules.py::test_multi_account_fail_rule_triggers PASSED
-tests/test_detection_rules.py::test_suspicious_login_rule_triggers PASSED
-tests/test_detection_rules.py::test_unusual_patterns_burst_rule PASSED
-tests/test_detection_rules.py::test_repeated_suspicious_ip_rule PASSED
-tests/test_detection_rules.py::test_brute_force_boundary_below_threshold PASSED
-tests/test_detection_rules.py::test_brute_force_events_outside_time_window PASSED
-tests/test_detection_rules.py::test_password_spraying_vs_brute_force_separation PASSED
-tests/test_detection_rules.py::test_suspicious_success_with_intervening_success PASSED
-tests/test_detection_rules.py::test_detection_rules_empty_dataset PASSED
-tests/test_detection_rules.py::test_detection_rules_malformed_events PASSED
-tests/test_detection_rules.py::test_different_source_ips_isolation PASSED
-tests/test_mitre_mapping.py::test_mitre_dataset_loading PASSED
-tests/test_mitre_mapping.py::test_mitre_rule_mappings PASSED
-tests/test_mitre_mapping.py::test_technique_validation PASSED
-tests/test_parsers.py::test_linux_auth_parser_valid PASSED
-tests/test_parsers.py::test_linux_auth_parser_invalid_lines PASSED
-tests/test_parsers.py::test_windows_events_parser_csv PASSED
-tests/test_parsers.py::test_windows_events_parser_json PASSED
-tests/test_parsers.py::test_generic_json_parser PASSED
-tests/test_parsers.py::test_generic_csv_parser PASSED
-tests/test_parsers.py::test_parser_factory_auto_detection PASSED
-tests/test_reporting.py::test_pdf_report_generation PASSED
-tests/test_reporting.py::test_csv_exports PASSED
-tests/test_risk_scoring.py::test_risk_score_normalization_and_factors PASSED
-tests/test_risk_scoring.py::test_severity_threshold_mappings PASSED
+tests/test_checkpoints_db.py .................................. [PASSED]
+tests/test_correlation.py ..................................... [PASSED]
+tests/test_dashboard_audit.py ................................. [PASSED]
+tests/test_database.py ........................................ [PASSED]
+tests/test_detection_rules.py ................................. [PASSED]
+tests/test_linux_telemetry.py ................................. [PASSED]
+tests/test_mitre_mapping.py ................................... [PASSED]
+tests/test_parsers.py ......................................... [PASSED]
+tests/test_real_world_validation.py ........................... [PASSED]
+tests/test_reporting.py ....................................... [PASSED]
+tests/test_risk_scoring.py .................................... [PASSED]
+tests/test_sysmon.py .......................................... [PASSED]
+tests/test_timestamp_handling.py .............................. [PASSED]
+tests/test_windows_collection.py .............................. [PASSED]
 
-======================== 33 passed in 1.43s ========================
+======================= 76 passed, 1 warning in 48.39s ========================
 ```
 
 ---

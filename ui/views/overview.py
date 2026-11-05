@@ -7,6 +7,7 @@ import plotly.graph_objects as go
 from datetime import datetime
 
 from loganalyzer.database import DatabaseManager
+from loganalyzer.utils import safe_to_datetime
 from ui.components import render_metric_card, get_severity_badge_html, get_status_badge_html, get_plotly_dark_layout
 
 
@@ -19,7 +20,9 @@ def render_overview(db: DatabaseManager):
     # 1. Metric Cards Row: 6 Core SOC Operational Metrics
     m1, m2, m3, m4, m5, m6 = st.columns(6)
     with m1:
-        render_metric_card("Total Events", f"{stats['total_events']:,}", "Normalized Logs", "#3B82F6")
+        gen_cnt = stats.get('genuine_events', 0)
+        syn_cnt = stats.get('synthetic_events', 0)
+        render_metric_card("Total Events", f"{stats['total_events']:,}", f"Genuine: {gen_cnt} | Lab: {syn_cnt}", "#3B82F6")
     with m2:
         render_metric_card("Total Detections", f"{stats['total_detections']:,}", f"Crit: {stats['critical_count']} | High: {stats['high_count']}", "#EC4899")
     with m3:
@@ -41,32 +44,37 @@ def render_overview(db: DatabaseManager):
         events = db.get_events(limit=3000)
         if events:
             df_ev = pd.DataFrame(events)
-            df_ev['timestamp'] = pd.to_datetime(df_ev['timestamp'])
-            df_ev = df_ev.sort_values('timestamp')
-            df_grouped = df_ev.set_index('timestamp').resample('5min').agg({
-                'id': 'count',
-                'status': lambda s: (s == 'FAILURE').sum()
-            }).rename(columns={'id': 'Total Events', 'status': 'Failures'}).reset_index()
+            df_ev['timestamp'] = safe_to_datetime(df_ev['timestamp'])
+            df_valid = df_ev.dropna(subset=['timestamp'])
 
-            fig = go.Figure()
-            fig.add_trace(go.Scatter(
-                x=df_grouped['timestamp'],
-                y=df_grouped['Total Events'],
-                name='Total Events',
-                line=dict(color='#3B82F6', width=2),
-                fill='tozeroy',
-                fillcolor='rgba(59, 130, 246, 0.1)'
-            ))
-            fig.add_trace(go.Bar(
-                x=df_grouped['timestamp'],
-                y=df_grouped['Failures'],
-                name='Auth Failures',
-                marker_color='#EF4444',
-                opacity=0.8
-            ))
-            fig.update_layout(get_plotly_dark_layout())
-            fig.update_layout(height=300, yaxis_title="Events / 5 Min")
-            st.plotly_chart(fig, use_container_width=True)
+            if not df_valid.empty:
+                df_valid = df_valid.sort_values('timestamp')
+                df_grouped = df_valid.set_index('timestamp').resample('5min').agg({
+                    'id': 'count',
+                    'status': lambda s: (s == 'FAILURE').sum()
+                }).rename(columns={'id': 'Total Events', 'status': 'Failures'}).reset_index()
+
+                fig = go.Figure()
+                fig.add_trace(go.Scatter(
+                    x=df_grouped['timestamp'],
+                    y=df_grouped['Total Events'],
+                    name='Total Events',
+                    line=dict(color='#3B82F6', width=2),
+                    fill='tozeroy',
+                    fillcolor='rgba(59, 130, 246, 0.1)'
+                ))
+                fig.add_trace(go.Bar(
+                    x=df_grouped['timestamp'],
+                    y=df_grouped['Failures'],
+                    name='Auth Failures',
+                    marker_color='#EF4444',
+                    opacity=0.8
+                ))
+                fig.update_layout(get_plotly_dark_layout())
+                fig.update_layout(height=300, yaxis_title="Events / 5 Min")
+                st.plotly_chart(fig, use_container_width=True)
+            else:
+                st.info("No valid event timestamps available for timeline visualization.")
         else:
             st.info("No events ingested yet. Load security logs via 'Log Ingestion'.")
 
@@ -100,7 +108,54 @@ def render_overview(db: DatabaseManager):
         else:
             st.info("No active detection alerts recorded.")
 
-    # 3. Third Row: Top Suspicious IPs, Most Targeted Accounts, and MITRE Distribution
+    # 3. Third Row: Multi-Endpoint & Platform Telemetry Distribution (Phase 3 Upgrade)
+    st.markdown("##### Multi-Endpoint & Operating System Distribution")
+    p1, p2 = st.columns(2)
+    with p1:
+        st.markdown("###### Telemetry Platform Breakdown")
+        plat_dist = stats.get("platform_distribution", [])
+        if plat_dist:
+            df_plat = pd.DataFrame(plat_dist)
+            plat_colors = {
+                "Windows": "#0EA5E9",
+                "Linux": "#10B981",
+                "Generic / Other": "#8B5CF6"
+            }
+            fig_plat = px.pie(
+                df_plat,
+                values="cnt",
+                names="platform",
+                hole=0.5,
+                color="platform",
+                color_discrete_map=plat_colors
+            )
+            fig_plat.update_layout(get_plotly_dark_layout())
+            fig_plat.update_layout(height=240, showlegend=True, margin=dict(t=10, b=10, l=10, r=10))
+            st.plotly_chart(fig_plat, use_container_width=True)
+        else:
+            st.info("No platform telemetry available yet.")
+
+    with p2:
+        st.markdown("###### Top Monitored Hostnames & Endpoints")
+        host_dist = stats.get("endpoint_distribution", [])
+        if host_dist:
+            df_host = pd.DataFrame(host_dist)
+            fig_host = px.bar(
+                df_host,
+                x="cnt",
+                y="hostname",
+                orientation='h',
+                labels={"cnt": "Events Ingested", "hostname": "Hostname"},
+                color="cnt",
+                color_continuous_scale="Teal"
+            )
+            fig_host.update_layout(get_plotly_dark_layout())
+            fig_host.update_layout(height=240, yaxis={'categoryorder': 'total ascending'}, coloraxis_showscale=False, margin=dict(t=10, b=10, l=10, r=10))
+            st.plotly_chart(fig_host, use_container_width=True)
+        else:
+            st.info("No endpoint hostnames identified yet.")
+
+    # 4. Fourth Row: Top Suspicious IPs, Most Targeted Accounts, and MITRE Distribution
     c3, c4 = st.columns(2)
     with c3:
         st.markdown("##### Top Suspicious Source IPs")
@@ -166,8 +221,13 @@ def render_overview(db: DatabaseManager):
     if incidents:
         display_rows = []
         for inc in incidents[:10]:
+            is_cp = any("cross-platform" in str(f).lower() for f in inc.get("risk_factors", [])) or "cross-platform" in inc["title"].lower()
+            nature = inc.get("telemetry_nature", "GENUINE")
+            origin_badge = "🌐 Mixed" if nature == "MIXED" else ("🧪 Synthetic" if nature == "SYNTHETIC" else "🛡️ Genuine")
             display_rows.append({
                 "Incident ID": inc["incident_id"],
+                "Scope": "🌐 Cross-Platform" if is_cp else "💻 Endpoint",
+                "Origin": origin_badge,
                 "Severity": inc["severity"],
                 "Risk Score": f"{inc['risk_score']}/100",
                 "Source IP": inc["source_ip"] or "Unknown",

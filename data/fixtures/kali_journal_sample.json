@@ -1,0 +1,4 @@
+{"__REALTIME_TIMESTAMP": "1730787001000000", "_HOSTNAME": "kali", "_COMM": "sshd", "_PID": "2101", "MESSAGE": "Failed password for invalid user scanner from 192.168.1.155 port 42100 ssh2"}
+{"__REALTIME_TIMESTAMP": "1730787005000000", "_HOSTNAME": "kali", "_COMM": "sshd", "_PID": "2102", "MESSAGE": "Failed password for invalid user testuser from 192.168.1.155 port 42101 ssh2"}
+{"__REALTIME_TIMESTAMP": "1730787010000000", "_HOSTNAME": "kali", "_COMM": "sshd", "_PID": "2103", "MESSAGE": "Failed password for invalid user backup from 192.168.1.155 port 42102 ssh2"}
+{"__REALTIME_TIMESTAMP": "1730787030000000", "_HOSTNAME": "kali", "_COMM": "sshd", "_PID": "2104", "MESSAGE": "Accepted publickey for kali from 192.168.1.155 port 42105 ssh2"}

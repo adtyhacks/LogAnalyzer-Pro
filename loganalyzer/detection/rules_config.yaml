@@ -70,3 +70,12 @@ rules:
     severity: "HIGH"
     min_detections: 2
     description: "A source IP exhibiting recurring suspicious behaviours across multiple time intervals or detection types."
+
+  invalid_user_enum:
+    enabled: true
+    rule_id: "RULE_INVALID_USER_ENUM"
+    rule_name: "Invalid User Enumeration via SSH"
+    severity: "MEDIUM"
+    threshold: 3
+    time_window_minutes: 15
+    description: "Repeated attempts against non-existent or invalid accounts from the same source IP within a short window."
