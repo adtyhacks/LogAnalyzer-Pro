@@ -82,6 +82,8 @@ def render_ingestion(db: DatabaseManager, det_engine: DetectionEngine, correlato
 
         sample_files = [
             ("Linux auth.log (SSH Brute Force, Spray, Privileged)", "linux_auth.log"),
+            ("Kali Linux Simulation (Syslog text - Lab Scenarios)", "collected/linux_demo_auth.log"),
+            ("Kali Linux Journal (NDJSON - Lab Scenarios)", "collected/linux_demo_journal.json"),
             ("Windows Security Events (CSV - 4624/4625/4672/4740)", "windows_events.csv"),
             ("Windows Security Events (JSON - Remote RDP Compromise)", "windows_events.json"),
             ("Generic JSON (High Burst Rate API Stuffing)", "generic_security.json"),
@@ -98,6 +100,10 @@ def render_ingestion(db: DatabaseManager, det_engine: DetectionEngine, correlato
 
                         parser = get_parser_for_file(fname, content[:1000])
                         events, stats = parser.parse_content(content, fname)
+                        for ev in events:
+                            ev.is_synthetic = True
+                            ev.event_hash = ev.compute_hash()
+
                         inserted, dups = db.insert_events(events)
                         stats.duplicate_events = dups
 
