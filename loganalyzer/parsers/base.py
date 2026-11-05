@@ -1,7 +1,7 @@
 """Base parser class with common normalization, timestamp parsing, and ingestion statistics."""
 
 from abc import ABC, abstractmethod
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import List, Tuple, Optional, Any, Union
 import re
@@ -47,10 +47,13 @@ class BaseLogParser(ABC):
 
         if isinstance(raw_ts, (int, float)):
             try:
+                # Check if microsecond timestamp (e.g. systemd journal)
+                if raw_ts > 1e14:
+                    return datetime.fromtimestamp(raw_ts / 1_000_000.0, tz=timezone.utc)
                 # Check if millisecond timestamp
                 if raw_ts > 1e11:
-                    return datetime.fromtimestamp(raw_ts / 1000.0)
-                return datetime.fromtimestamp(raw_ts)
+                    return datetime.fromtimestamp(raw_ts / 1000.0, tz=timezone.utc)
+                return datetime.fromtimestamp(raw_ts, tz=timezone.utc)
             except Exception:
                 return utc_now()
 

