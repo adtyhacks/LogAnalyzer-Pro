@@ -48,6 +48,13 @@
       "tactic": "Impact",
       "description": "Adversaries may cause service degradation or account lockouts through excessive high-frequency authentication attempts.",
       "url": "https://attack.mitre.org/techniques/T1499/"
+    },
+    {
+      "technique_id": "T1087.001",
+      "name": "Account Discovery: Local Account",
+      "tactic": "Discovery",
+      "description": "Adversaries may attempt to discover local system accounts on the endpoint, such as enumerating non-existent accounts via service authentication probing.",
+      "url": "https://attack.mitre.org/techniques/T1087/001/"
     }
   ]
 }

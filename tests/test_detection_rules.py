@@ -429,3 +429,47 @@ def test_different_source_ips_isolation():
     # Neither IP reached threshold 5, so no detection should be triggered
     assert len(detections) == 0
 
+
+def test_routine_event_4672_and_system_logon_not_falsely_detected():
+    """Verify routine Windows Event 4672 and SYSTEM logons do not trigger false positive suspicious login detections."""
+    rule = SuspiciousLoginRule()
+    events = [
+        # Routine local Windows Event 4672
+        NormalizedEvent(
+            timestamp=datetime(2026, 11, 5, 2, 0, 0),
+            source_type="windows_events",
+            event_type="privilege",
+            action=ActionType.PRIVILEGE_ESCALATION.value,
+            status=EventStatus.SUCCESS.value,
+            username="administrator",
+            source_ip=None,
+            metadata={"EventID": 4672}
+        ),
+        # Routine OS SYSTEM logon
+        NormalizedEvent(
+            timestamp=datetime(2026, 11, 5, 2, 1, 0),
+            source_type="windows_events",
+            event_type="authentication",
+            action=ActionType.LOGIN.value,
+            status=EventStatus.SUCCESS.value,
+            username="SYSTEM",
+            source_ip=None,
+            metadata={"EventID": 4624}
+        ),
+        # Computer account logon
+        NormalizedEvent(
+            timestamp=datetime(2026, 11, 5, 2, 2, 0),
+            source_type="windows_events",
+            event_type="authentication",
+            action=ActionType.LOGIN.value,
+            status=EventStatus.SUCCESS.value,
+            username="WORKSTATION$",
+            source_ip=None,
+            metadata={"EventID": 4624}
+        )
+    ]
+
+    detections = rule.evaluate(events)
+    assert len(detections) == 0
+
+

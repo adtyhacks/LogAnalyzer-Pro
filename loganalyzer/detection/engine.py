@@ -16,6 +16,7 @@ from loganalyzer.detection.rules.multi_account_fail import MultiAccountFailRule
 from loganalyzer.detection.rules.suspicious_login import SuspiciousLoginRule
 from loganalyzer.detection.rules.unusual_patterns import UnusualPatternsRule
 from loganalyzer.detection.rules.repeated_suspicious_ip import RepeatedSuspiciousIpRule
+from loganalyzer.detection.rules.invalid_user_enum import InvalidUserEnumerationRule
 
 
 class DetectionEngine:
@@ -43,7 +44,8 @@ class DetectionEngine:
             MultiAccountFailRule(rules_cfg.get("multi_account_fail", {})),
             SuspiciousLoginRule(rules_cfg.get("suspicious_login", {})),
             UnusualPatternsRule(rules_cfg.get("unusual_patterns", {})),
-            RepeatedSuspiciousIpRule(rules_cfg.get("repeated_suspicious_ip", {}))
+            RepeatedSuspiciousIpRule(rules_cfg.get("repeated_suspicious_ip", {})),
+            InvalidUserEnumerationRule(rules_cfg.get("invalid_user_enum", {}))
         ]
 
     def analyze_events(self, events: List[NormalizedEvent], persist: bool = True) -> List[DetectionRecord]:

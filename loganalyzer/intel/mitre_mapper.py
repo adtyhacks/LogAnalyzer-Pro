@@ -45,7 +45,8 @@ class MitreMapper:
             "RULE_MULTI_ACCOUNT_FAIL": "T1110.003",
             "RULE_SUSPICIOUS_LOGIN": "T1078.003",
             "RULE_UNUSUAL_PATTERNS": "T1499",
-            "RULE_REPEATED_SUSPICIOUS_IP": "T1110.001"
+            "RULE_REPEATED_SUSPICIOUS_IP": "T1110.001",
+            "RULE_INVALID_USER_ENUM": "T1087.001"
         }
         tech_id = mapping.get(rule_id)
         if tech_id and tech_id in self._techniques:
